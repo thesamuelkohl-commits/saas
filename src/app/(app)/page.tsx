@@ -10,12 +10,9 @@ interface Stats {
   revenueTotal: number;
   revenueThisMonth: number;
   revenueBySource: Record<string, number>;
-  totalReviews: number;
   avgViews: number | null;
   seoImpressions: number;
   seoClicks: number;
-  bestCuisines: { cuisine: string; avgScore: number; count: number }[];
-  topReviews: { id: string; name: string; sam_score: number | null }[];
   topVideos: { id: string; title: string; views: number | null; platform: string }[];
   topContentByRevenue: { id: string; title: string; amount: number }[];
   suggestions: string[];
@@ -43,20 +40,16 @@ export default function DashboardPage() {
         { data: contentItems },
         { data: sponsorships },
         { data: revenue },
-        { data: reviews },
         { data: platformPosts },
-        { data: websitePages },
         { data: seoEntries },
       ] = await Promise.all([
         supabase.from("content_items").select("id, title, stage"),
         supabase.from("sponsorships").select("stage, deal_value"),
         supabase.from("revenue_entries").select("source, amount, entry_date, content_item_id, content_items(title)"),
-        supabase.from("reviews").select("id, sam_score, restaurant_name, cuisine"),
         supabase
           .from("platform_posts")
           .select("id, platform, views, status, content_item_id, content_items(title)"),
-        supabase.from("website_pages").select("id, title, stage"),
-        supabase.from("seo_entries").select("website_page_id, impressions, clicks, indexed"),
+        supabase.from("seo_entries").select("impressions, clicks"),
       ]);
 
       // ---- content pipeline by stage ----
@@ -112,34 +105,6 @@ export default function DashboardPage() {
         .map(([id, v]) => ({ id, ...v }))
         .sort((a, b) => b.amount - a.amount)
         .slice(0, 5);
-
-      // ---- reviews + cuisines ----
-      const reviewRows = (reviews ?? []) as {
-        id: string;
-        sam_score: number | null;
-        restaurant_name: string | null;
-        cuisine: string | null;
-      }[];
-      const totalReviews = reviewRows.length;
-
-      const cuisineAgg = new Map<string, { total: number; count: number }>();
-      for (const r of reviewRows) {
-        if (!r.cuisine || r.sam_score === null) continue;
-        const agg = cuisineAgg.get(r.cuisine) ?? { total: 0, count: 0 };
-        agg.total += r.sam_score;
-        agg.count += 1;
-        cuisineAgg.set(r.cuisine, agg);
-      }
-      const bestCuisines = Array.from(cuisineAgg.entries())
-        .map(([cuisine, agg]) => ({ cuisine, avgScore: agg.total / agg.count, count: agg.count }))
-        .sort((a, b) => b.avgScore - a.avgScore)
-        .slice(0, 5);
-
-      const topReviews = reviewRows
-        .filter((r) => r.sam_score !== null)
-        .sort((a, b) => (b.sam_score ?? 0) - (a.sam_score ?? 0))
-        .slice(0, 5)
-        .map((r) => ({ id: r.id, name: r.restaurant_name ?? "Unknown", sam_score: r.sam_score }));
 
       // ---- platform posts / views ----
       const postRows = (platformPosts ?? []) as unknown as {
@@ -198,17 +163,6 @@ export default function DashboardPage() {
         }
       }
 
-      const indexedPages = new Set(
-        (seoEntries ?? [])
-          .filter((s) => (s as { indexed: boolean }).indexed && (s as { website_page_id: string | null }).website_page_id)
-          .map((s) => (s as { website_page_id: string }).website_page_id)
-      );
-      for (const page of (websitePages ?? []) as { id: string; title: string; stage: string }[]) {
-        if (page.stage === "published" && !indexedPages.has(page.id)) {
-          suggestions.push(`"${page.title}" is live on the website but not indexed by Google yet.`);
-        }
-      }
-
       setStats({
         contentByStage,
         sponsorshipPipelineValue,
@@ -216,12 +170,9 @@ export default function DashboardPage() {
         revenueTotal,
         revenueThisMonth,
         revenueBySource,
-        totalReviews,
         avgViews,
         seoImpressions,
         seoClicks,
-        bestCuisines,
-        topReviews,
         topVideos,
         topContentByRevenue,
         suggestions,
@@ -239,11 +190,10 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-lg font-semibold text-neutral-900">Dashboard</h1>
-        <p className="text-sm text-neutral-500">Which content, cuisines, and deals are performing.</p>
+        <p className="text-sm text-neutral-500">Which content and deals are performing.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="Total Reviews" value={String(stats.totalReviews)} />
         <StatCard
           label="Posted Videos"
           value={String(stats.contentByStage.posted ?? 0)}
@@ -306,38 +256,6 @@ export default function DashboardPage() {
               ))
             )}
           </div>
-        </Panel>
-
-        <Panel title="Best-Performing Cuisines">
-          {stats.bestCuisines.length === 0 ? (
-            <p className="text-sm text-neutral-400">No scored reviews with a cuisine yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {stats.bestCuisines.map((c) => (
-                <div key={c.cuisine} className="flex items-center justify-between text-sm">
-                  <span className="text-neutral-600">
-                    {c.cuisine} <span className="text-neutral-400">({c.count})</span>
-                  </span>
-                  <span className="font-medium text-neutral-900">{c.avgScore.toFixed(1)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </Panel>
-
-        <Panel title="Top Rated Restaurants">
-          {stats.topReviews.length === 0 ? (
-            <p className="text-sm text-neutral-400">No scored reviews yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {stats.topReviews.map((r) => (
-                <div key={r.id} className="flex items-center justify-between text-sm">
-                  <span className="text-neutral-600">{r.name}</span>
-                  <span className="font-medium text-neutral-900">{r.sam_score}</span>
-                </div>
-              ))}
-            </div>
-          )}
         </Panel>
 
         <Panel title="Top Performing Videos">
