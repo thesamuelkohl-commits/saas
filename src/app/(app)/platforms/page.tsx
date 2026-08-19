@@ -1,6 +1,7 @@
 "use client";
 
 import CrudManager from "@/components/crud/CrudManager";
+import InstagramRefreshButton from "@/components/InstagramRefreshButton";
 import type { ColumnDef } from "@/components/crud/types";
 
 const columns: ColumnDef[] = [
@@ -45,12 +46,15 @@ const columns: ColumnDef[] = [
 
 export default function PlatformsPage() {
   return (
-    <CrudManager
-      table="platform_posts"
-      title="Platform Tracker"
-      description="TikTok / IG / YouTube status for each video."
-      columns={columns}
-      addLabel="Post"
-    />
+    <div>
+      <InstagramRefreshButton />
+      <CrudManager
+        table="platform_posts"
+        title="Platform Tracker"
+        description="TikTok / IG / YouTube status for each video."
+        columns={columns}
+        addLabel="Post"
+      />
+    </div>
   );
 }
