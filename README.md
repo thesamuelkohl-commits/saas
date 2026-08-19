@@ -7,24 +7,23 @@ revenue, and analytics — all in one place.
 ## Stack
 
 - Next.js (App Router) + TypeScript + Tailwind
-- Supabase (Postgres + Auth) — magic-link sign-in, row-level security
+- Supabase (Postgres + Auth) — single shared password, row-level security
 
 ## Setup
 
 1. Create a free project at [supabase.com](https://supabase.com).
 2. In the Supabase SQL editor, run [`supabase/schema.sql`](supabase/schema.sql) to create all tables, enums, and RLS policies.
-3. In Supabase → Authentication → URL Configuration, add `http://localhost:3000/auth/callback` as a redirect URL (and your production URL later).
-4. Copy `.env.local.example` to `.env.local` and fill in your project's URL and anon key (Supabase → Project Settings → API).
-5. Install and run:
+3. Copy `.env.local.example` to `.env.local` and fill in your project's URL and anon key (Supabase → Project Settings → API).
+4. Install and run:
 
    ```bash
    npm install
    npm run dev
    ```
 
-6. Open `http://localhost:3000`, sign in with your email (magic link), and start filling in restaurants, content, and reviews.
+5. Open `http://localhost:3000`, sign in with the shared password, and start filling in restaurants, content, and reviews.
 
-Auth is single-user by design — anyone with a valid session has full read/write access. Don't share sign-in links.
+Auth is a single Supabase user (`thesamuelkohl@gmail.com`) signed in by password, not per-visitor accounts — the password is the gate. Anyone with it has full read/write access. Change it any time via the Supabase dashboard (Authentication → Users → edit user → reset password) or the Admin API.
 
 ## Modules
 
