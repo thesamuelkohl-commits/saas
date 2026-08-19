@@ -8,9 +8,9 @@ import { useRouter } from "next/navigation";
 const NAV = [
   { href: "/", label: "Dashboard", emoji: "📊" },
   { href: "/content", label: "Content Pipeline", emoji: "🎥" },
+  { href: "/calendar", label: "Calendar", emoji: "📅" },
   { href: "/platforms", label: "Platform Tracker", emoji: "📱" },
   { href: "/reviews", label: "Review Manager", emoji: "⭐" },
-  { href: "/restaurants", label: "Restaurants", emoji: "🍽️" },
   { href: "/wishlist", label: "Wish List", emoji: "📝" },
   { href: "/website", label: "Website Pipeline", emoji: "🌐" },
   { href: "/seo", label: "SEO Tracker", emoji: "🔎" },

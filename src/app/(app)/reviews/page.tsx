@@ -4,14 +4,8 @@ import CrudManager from "@/components/crud/CrudManager";
 import type { ColumnDef } from "@/components/crud/types";
 
 const columns: ColumnDef[] = [
-  {
-    key: "restaurant_id",
-    label: "Restaurant",
-    type: "relation",
-    relation: { table: "restaurants", labelField: "name" },
-    required: true,
-    summary: true,
-  },
+  { key: "restaurant_name", label: "Restaurant", type: "text", required: true, summary: true },
+  { key: "cuisine", label: "Cuisine", type: "text", summary: true },
   { key: "sam_score", label: "Sam Score", type: "number", step: "0.1", summary: true },
   { key: "food_score", label: "Food Score", type: "number", step: "0.1" },
   { key: "service_score", label: "Service Score", type: "number", step: "0.1" },

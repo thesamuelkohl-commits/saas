@@ -12,16 +12,6 @@ create type sponsorship_stage as enum ('prospect', 'contacted', 'negotiating', '
 create type website_stage as enum ('draft', 'in_review', 'published', 'indexed');
 create type revenue_source as enum ('sponsorship', 'affiliate', 'ads', 'platform', 'other');
 
--- ---------- restaurants (central entity many modules hang off of) ----------
-create table restaurants (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,
-  address text,
-  cuisine text,
-  city text,
-  created_at timestamptz not null default now()
-);
-
 -- ---------- wish list ----------
 create table wishlist_items (
   id uuid primary key default gen_random_uuid(),
@@ -44,7 +34,7 @@ create table wishlist_items (
 -- ---------- content pipeline ----------
 create table content_items (
   id uuid primary key default gen_random_uuid(),
-  restaurant_id uuid references restaurants(id) on delete set null,
+  restaurant_name text,
   title text not null,
   stage content_stage not null default 'idea',
   notes text,
@@ -72,7 +62,8 @@ create table platform_posts (
 -- ---------- review manager ----------
 create table reviews (
   id uuid primary key default gen_random_uuid(),
-  restaurant_id uuid references restaurants(id) on delete set null,
+  restaurant_name text,
+  cuisine text,
   content_item_id uuid references content_items(id) on delete set null,
   sam_score numeric(3,1),
   food_score numeric(3,1),
@@ -88,7 +79,7 @@ create table reviews (
 -- ---------- website pipeline ----------
 create table website_pages (
   id uuid primary key default gen_random_uuid(),
-  restaurant_id uuid references restaurants(id) on delete set null,
+  restaurant_name text,
   review_id uuid references reviews(id) on delete set null,
   title text not null,
   url text,
@@ -129,6 +120,7 @@ create table revenue_entries (
   id uuid primary key default gen_random_uuid(),
   source revenue_source not null,
   sponsorship_id uuid references sponsorships(id) on delete set null,
+  content_item_id uuid references content_items(id) on delete set null,
   amount numeric(10,2) not null,
   entry_date date not null default current_date,
   notes text,
@@ -150,7 +142,6 @@ create trigger sponsorships_updated_at before update on sponsorships
   for each row execute function set_updated_at();
 
 -- ---------- RLS: single-user app, any authenticated session gets full access ----------
-alter table restaurants enable row level security;
 alter table wishlist_items enable row level security;
 alter table content_items enable row level security;
 alter table platform_posts enable row level security;
@@ -166,7 +157,7 @@ declare
 begin
   for t in
     select unnest(array[
-      'restaurants', 'wishlist_items', 'content_items', 'platform_posts',
+      'wishlist_items', 'content_items', 'platform_posts',
       'reviews', 'website_pages', 'seo_entries', 'sponsorships', 'revenue_entries'
     ])
   loop

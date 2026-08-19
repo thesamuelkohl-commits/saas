@@ -5,13 +5,7 @@ import type { ColumnDef } from "@/components/crud/types";
 
 const columns: ColumnDef[] = [
   { key: "title", label: "Title", type: "text", required: true, summary: true },
-  {
-    key: "restaurant_id",
-    label: "Restaurant",
-    type: "relation",
-    relation: { table: "restaurants", labelField: "name" },
-    summary: true,
-  },
+  { key: "restaurant_name", label: "Restaurant", type: "text", summary: true },
   {
     key: "stage",
     label: "Stage",

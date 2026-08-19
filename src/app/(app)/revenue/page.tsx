@@ -26,6 +26,12 @@ const columns: ColumnDef[] = [
     type: "relation",
     relation: { table: "sponsorships", labelField: "brand_name" },
   },
+  {
+    key: "content_item_id",
+    label: "Content",
+    type: "relation",
+    relation: { table: "content_items", labelField: "title" },
+  },
   { key: "notes", label: "Notes", type: "textarea" },
 ];
 
