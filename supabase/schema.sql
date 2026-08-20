@@ -40,7 +40,6 @@ create table content_items (
   notes text,
   film_date date,
   posted_date date,
-  due_date date,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
