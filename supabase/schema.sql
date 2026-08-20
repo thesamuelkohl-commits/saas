@@ -33,7 +33,7 @@ create table wishlist_items (
 -- ---------- content pipeline ----------
 create table content_items (
   id uuid primary key default gen_random_uuid(),
-  restaurant_name text,
+  inspo_link text,
   title text not null,
   stage content_stage not null default 'idea',
   notes text,

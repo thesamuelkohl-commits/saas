@@ -15,7 +15,7 @@ const STAGES: { value: string; label: string; color: string }[] = [
 
 const columns: ColumnDef[] = [
   { key: "title", label: "Title", type: "text", required: true },
-  { key: "restaurant_name", label: "Restaurant", type: "text" },
+  { key: "inspo_link", label: "Inspo Link", type: "text", placeholder: "https://…" },
   {
     key: "stage",
     label: "Stage",
@@ -32,7 +32,7 @@ interface ContentItem {
   [key: string]: unknown;
   id: string;
   title: string;
-  restaurant_name: string | null;
+  inspo_link: string | null;
   stage: string;
   film_date: string | null;
   due_date: string | null;
@@ -176,8 +176,16 @@ export default function ContentKanban() {
                     className="cursor-pointer rounded-md border border-neutral-200 bg-white p-2.5 shadow-sm hover:border-neutral-300"
                   >
                     <p className="text-sm font-medium text-neutral-900">{item.title}</p>
-                    {item.restaurant_name && (
-                      <p className="mt-0.5 text-xs text-neutral-500">{item.restaurant_name}</p>
+                    {item.inspo_link && (
+                      <a
+                        href={item.inspo_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-0.5 block truncate text-xs text-blue-600 hover:underline"
+                      >
+                        🔗 Inspo link
+                      </a>
                     )}
                     {item.film_date && (
                       <p className="mt-1 text-xs text-neutral-400">
