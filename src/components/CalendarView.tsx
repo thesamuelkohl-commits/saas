@@ -7,26 +7,22 @@ interface CalendarEvent {
   id: string;
   date: string; // YYYY-MM-DD
   label: string;
-  type: "film" | "due" | "scheduled" | "posted";
+  type: "film" | "scheduled" | "posted";
   table: "content_items" | "platform_posts";
-  field: "film_date" | "due_date" | "posted_at";
+  field: "film_date" | "posted_date" | "posted_at";
 }
 
 const TYPE_STYLE: Record<CalendarEvent["type"], string> = {
   film: "bg-blue-100 text-blue-700",
-  due: "bg-amber-100 text-amber-700",
   scheduled: "bg-purple-100 text-purple-700",
   posted: "bg-green-100 text-green-700",
 };
 
 const TYPE_LABEL: Record<CalendarEvent["type"], string> = {
   film: "Film",
-  due: "Due",
   scheduled: "Scheduled",
   posted: "Posted",
 };
-
-const EDITABLE_TYPES = new Set<CalendarEvent["type"]>(["film", "scheduled", "posted"]);
 
 function toDateKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
@@ -48,7 +44,7 @@ export default function CalendarView() {
   async function load() {
     const supabase = createClient();
     const [{ data: content }, { data: posts }] = await Promise.all([
-      supabase.from("content_items").select("id, title, film_date, due_date"),
+      supabase.from("content_items").select("id, title, film_date, posted_date"),
       supabase.from("platform_posts").select("id, platform, posted_at, content_items(title)"),
     ]);
 
@@ -58,7 +54,7 @@ export default function CalendarView() {
       id: string;
       title: string;
       film_date: string | null;
-      due_date: string | null;
+      posted_date: string | null;
     }[]) {
       if (c.film_date) {
         evts.push({
@@ -70,14 +66,14 @@ export default function CalendarView() {
           field: "film_date",
         });
       }
-      if (c.due_date) {
+      if (c.posted_date) {
         evts.push({
           id: c.id,
-          date: c.due_date,
+          date: c.posted_date,
           label: c.title,
-          type: "due",
+          type: c.posted_date > todayKey ? "scheduled" : "posted",
           table: "content_items",
-          field: "due_date",
+          field: "posted_date",
         });
       }
     }
@@ -138,7 +134,6 @@ export default function CalendarView() {
   const today = toDateKey(new Date());
 
   function openEditor(e: CalendarEvent) {
-    if (!EDITABLE_TYPES.has(e.type)) return;
     setEditing(e);
     setEditDate(e.date);
   }
@@ -184,9 +179,7 @@ export default function CalendarView() {
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-neutral-900">Calendar</h1>
-          <p className="text-sm text-neutral-500">
-            Film dates, due dates, scheduled posts, and posted content.
-          </p>
+          <p className="text-sm text-neutral-500">Film dates, scheduled posts, and posted content.</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -221,15 +214,12 @@ export default function CalendarView() {
           <span className="h-2 w-2 rounded-full bg-blue-400" /> Film date
         </span>
         <span className="flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-amber-400" /> Due date
-        </span>
-        <span className="flex items-center gap-1">
           <span className="h-2 w-2 rounded-full bg-purple-400" /> Scheduled
         </span>
         <span className="flex items-center gap-1">
           <span className="h-2 w-2 rounded-full bg-green-400" /> Posted
         </span>
-        <span className="text-neutral-400">— click a film/scheduled/posted date to edit it</span>
+        <span className="text-neutral-400">— click any date to edit it</span>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-neutral-200">
@@ -269,12 +259,8 @@ export default function CalendarView() {
                       <p
                         key={i}
                         onClick={() => openEditor(e)}
-                        title={`${TYPE_LABEL[e.type]}: ${e.label}${
-                          EDITABLE_TYPES.has(e.type) ? " (click to edit date)" : ""
-                        }`}
-                        className={`truncate rounded px-1 py-0.5 text-[10px] font-medium ${TYPE_STYLE[e.type]} ${
-                          EDITABLE_TYPES.has(e.type) ? "cursor-pointer hover:opacity-75" : ""
-                        }`}
+                        title={`${TYPE_LABEL[e.type]}: ${e.label} (click to edit date)`}
+                        className={`cursor-pointer truncate rounded px-1 py-0.5 text-[10px] font-medium hover:opacity-75 ${TYPE_STYLE[e.type]}`}
                       >
                         {e.label}
                       </p>

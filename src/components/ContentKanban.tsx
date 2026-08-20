@@ -23,6 +23,7 @@ const columns: ColumnDef[] = [
     options: STAGES.map((s) => ({ value: s.value, label: s.label })),
   },
   { key: "film_date", label: "Film Date", type: "date" },
+  { key: "posted_date", label: "Posted Date", type: "date" },
   { key: "due_date", label: "Due Date", type: "date" },
   { key: "notes", label: "Notes", type: "textarea" },
 ];
@@ -34,6 +35,7 @@ interface ContentItem {
   inspo_link: string | null;
   stage: string;
   film_date: string | null;
+  posted_date: string | null;
   due_date: string | null;
   notes: string | null;
 }
