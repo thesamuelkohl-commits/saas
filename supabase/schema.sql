@@ -5,11 +5,12 @@
 create extension if not exists "pgcrypto";
 
 -- ---------- enums ----------
-create type content_stage as enum ('idea', 'filmed', 'editing', 'scheduled', 'posted');
+create type content_stage as enum ('idea', 'editing', 'scheduled', 'posted');
 create type platform_name as enum ('tiktok', 'instagram', 'youtube');
 create type platform_status as enum ('not_started', 'scheduled', 'posted');
 create type sponsorship_stage as enum ('prospect', 'contacted', 'negotiating', 'deal_closed', 'worked_with', 'passed');
 create type revenue_source as enum ('sponsorship', 'affiliate', 'ads', 'platform', 'other');
+create type activity_type as enum ('call', 'text', 'email', 'meeting', 'other');
 
 -- ---------- wish list ----------
 create table wishlist_items (
@@ -76,12 +77,23 @@ create table sponsorships (
   brand_name text not null,
   contact_name text,
   contact_email text,
+  phone text,
   stage sponsorship_stage not null default 'prospect',
   deal_value numeric(10,2),
   notes text,
   last_contact_date date,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
+);
+
+-- ---------- sponsorship activity log ----------
+create table sponsorship_activities (
+  id uuid primary key default gen_random_uuid(),
+  sponsorship_id uuid not null references sponsorships(id) on delete cascade,
+  type activity_type not null,
+  notes text,
+  occurred_at date not null default current_date,
+  created_at timestamptz not null default now()
 );
 
 -- ---------- revenue ----------
@@ -116,6 +128,7 @@ alter table content_items enable row level security;
 alter table platform_posts enable row level security;
 alter table seo_entries enable row level security;
 alter table sponsorships enable row level security;
+alter table sponsorship_activities enable row level security;
 alter table revenue_entries enable row level security;
 
 do $$
@@ -125,7 +138,7 @@ begin
   for t in
     select unnest(array[
       'wishlist_items', 'content_items', 'platform_posts',
-      'seo_entries', 'sponsorships', 'revenue_entries'
+      'seo_entries', 'sponsorships', 'sponsorship_activities', 'revenue_entries'
     ])
   loop
     execute format(

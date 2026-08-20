@@ -4,22 +4,29 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 interface CalendarEvent {
+  id: string;
   date: string; // YYYY-MM-DD
   label: string;
-  type: "film" | "due" | "posted";
+  type: "film" | "due" | "scheduled" | "posted";
+  table: "content_items" | "platform_posts";
+  field: "film_date" | "due_date" | "posted_at";
 }
 
 const TYPE_STYLE: Record<CalendarEvent["type"], string> = {
   film: "bg-blue-100 text-blue-700",
   due: "bg-amber-100 text-amber-700",
+  scheduled: "bg-purple-100 text-purple-700",
   posted: "bg-green-100 text-green-700",
 };
 
 const TYPE_LABEL: Record<CalendarEvent["type"], string> = {
   film: "Film",
   due: "Due",
+  scheduled: "Scheduled",
   posted: "Posted",
 };
+
+const EDITABLE_TYPES = new Set<CalendarEvent["type"]>(["film", "scheduled", "posted"]);
 
 function toDateKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
@@ -34,43 +41,68 @@ export default function CalendarView() {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
+  const [editing, setEditing] = useState<CalendarEvent | null>(null);
+  const [editDate, setEditDate] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function load() {
+    const supabase = createClient();
+    const [{ data: content }, { data: posts }] = await Promise.all([
+      supabase.from("content_items").select("id, title, film_date, due_date"),
+      supabase.from("platform_posts").select("id, platform, posted_at, content_items(title)"),
+    ]);
+
+    const todayKey = toDateKey(new Date());
+    const evts: CalendarEvent[] = [];
+    for (const c of (content ?? []) as {
+      id: string;
+      title: string;
+      film_date: string | null;
+      due_date: string | null;
+    }[]) {
+      if (c.film_date) {
+        evts.push({
+          id: c.id,
+          date: c.film_date,
+          label: c.title,
+          type: "film",
+          table: "content_items",
+          field: "film_date",
+        });
+      }
+      if (c.due_date) {
+        evts.push({
+          id: c.id,
+          date: c.due_date,
+          label: c.title,
+          type: "due",
+          table: "content_items",
+          field: "due_date",
+        });
+      }
+    }
+    for (const p of (posts ?? []) as unknown as {
+      id: string;
+      platform: string;
+      posted_at: string | null;
+      content_items: { title: string } | null;
+    }[]) {
+      if (p.posted_at) {
+        evts.push({
+          id: p.id,
+          date: p.posted_at,
+          label: `${p.content_items?.title ?? "Untitled"} (${p.platform})`,
+          type: p.posted_at > todayKey ? "scheduled" : "posted",
+          table: "platform_posts",
+          field: "posted_at",
+        });
+      }
+    }
+    setEvents(evts);
+    setLoading(false);
+  }
 
   useEffect(() => {
-    async function load() {
-      const supabase = createClient();
-      const [{ data: content }, { data: posts }] = await Promise.all([
-        supabase.from("content_items").select("id, title, film_date, due_date"),
-        supabase
-          .from("platform_posts")
-          .select("id, platform, posted_at, status, content_items(title)"),
-      ]);
-
-      const evts: CalendarEvent[] = [];
-      for (const c of (content ?? []) as {
-        title: string;
-        film_date: string | null;
-        due_date: string | null;
-      }[]) {
-        if (c.film_date) evts.push({ date: c.film_date, label: c.title, type: "film" });
-        if (c.due_date) evts.push({ date: c.due_date, label: c.title, type: "due" });
-      }
-      for (const p of (posts ?? []) as unknown as {
-        platform: string;
-        posted_at: string | null;
-        status: string;
-        content_items: { title: string } | null;
-      }[]) {
-        if (p.posted_at) {
-          evts.push({
-            date: p.posted_at,
-            label: `${p.content_items?.title ?? "Untitled"} (${p.platform})`,
-            type: "posted",
-          });
-        }
-      }
-      setEvents(evts);
-      setLoading(false);
-    }
     load();
   }, []);
 
@@ -105,6 +137,46 @@ export default function CalendarView() {
 
   const today = toDateKey(new Date());
 
+  function openEditor(e: CalendarEvent) {
+    if (!EDITABLE_TYPES.has(e.type)) return;
+    setEditing(e);
+    setEditDate(e.date);
+  }
+
+  async function handleSaveDate() {
+    if (!editing) return;
+    setSaving(true);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from(editing.table)
+      .update({ [editing.field]: editDate || null })
+      .eq("id", editing.id);
+    setSaving(false);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    setEditing(null);
+    await load();
+  }
+
+  async function handleClearDate() {
+    if (!editing) return;
+    setSaving(true);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from(editing.table)
+      .update({ [editing.field]: null })
+      .eq("id", editing.id);
+    setSaving(false);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    setEditing(null);
+    await load();
+  }
+
   if (loading) return <p className="text-sm text-neutral-400">Loading…</p>;
 
   return (
@@ -112,7 +184,9 @@ export default function CalendarView() {
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-neutral-900">Calendar</h1>
-          <p className="text-sm text-neutral-500">Film dates, due dates, and posted content.</p>
+          <p className="text-sm text-neutral-500">
+            Film dates, due dates, scheduled posts, and posted content.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -142,7 +216,7 @@ export default function CalendarView() {
         </div>
       </div>
 
-      <div className="mb-2 flex gap-4 text-xs text-neutral-500">
+      <div className="mb-2 flex flex-wrap items-center gap-4 text-xs text-neutral-500">
         <span className="flex items-center gap-1">
           <span className="h-2 w-2 rounded-full bg-blue-400" /> Film date
         </span>
@@ -150,8 +224,12 @@ export default function CalendarView() {
           <span className="h-2 w-2 rounded-full bg-amber-400" /> Due date
         </span>
         <span className="flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full bg-purple-400" /> Scheduled
+        </span>
+        <span className="flex items-center gap-1">
           <span className="h-2 w-2 rounded-full bg-green-400" /> Posted
         </span>
+        <span className="text-neutral-400">— click a film/scheduled/posted date to edit it</span>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-neutral-200">
@@ -190,8 +268,13 @@ export default function CalendarView() {
                     {dayEvents.slice(0, 3).map((e, i) => (
                       <p
                         key={i}
-                        title={`${TYPE_LABEL[e.type]}: ${e.label}`}
-                        className={`truncate rounded px-1 py-0.5 text-[10px] font-medium ${TYPE_STYLE[e.type]}`}
+                        onClick={() => openEditor(e)}
+                        title={`${TYPE_LABEL[e.type]}: ${e.label}${
+                          EDITABLE_TYPES.has(e.type) ? " (click to edit date)" : ""
+                        }`}
+                        className={`truncate rounded px-1 py-0.5 text-[10px] font-medium ${TYPE_STYLE[e.type]} ${
+                          EDITABLE_TYPES.has(e.type) ? "cursor-pointer hover:opacity-75" : ""
+                        }`}
                       >
                         {e.label}
                       </p>
@@ -208,6 +291,49 @@ export default function CalendarView() {
           </div>
         ))}
       </div>
+
+      {editing && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+          onClick={() => setEditing(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-lg border border-neutral-200 bg-white p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-sm font-semibold text-neutral-900">{editing.label}</p>
+            <p className="mb-3 text-xs text-neutral-500">{TYPE_LABEL[editing.type]} date</p>
+            <input
+              type="date"
+              value={editDate}
+              onChange={(e) => setEditDate(e.target.value)}
+              className="w-full rounded-md border border-neutral-300 px-2.5 py-1.5 text-sm outline-none focus:border-neutral-900"
+            />
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={handleSaveDate}
+                disabled={saving}
+                className="rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+              >
+                {saving ? "Saving…" : "Save"}
+              </button>
+              <button
+                onClick={handleClearDate}
+                disabled={saving}
+                className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-medium text-neutral-600 disabled:opacity-50"
+              >
+                Clear date
+              </button>
+              <button
+                onClick={() => setEditing(null)}
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-neutral-500 hover:bg-neutral-100"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

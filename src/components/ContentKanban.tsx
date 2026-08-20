@@ -7,8 +7,7 @@ import type { ColumnDef } from "@/components/crud/types";
 
 const STAGES: { value: string; label: string; color: string }[] = [
   { value: "idea", label: "Idea", color: "border-t-neutral-400" },
-  { value: "filmed", label: "Filmed", color: "border-t-blue-400" },
-  { value: "editing", label: "Editing", color: "border-t-amber-400" },
+  { value: "editing", label: "Filmed/Editing", color: "border-t-blue-400" },
   { value: "scheduled", label: "Scheduled", color: "border-t-purple-400" },
   { value: "posted", label: "Posted", color: "border-t-green-400" },
 ];
@@ -108,7 +107,7 @@ export default function ContentKanban() {
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-lg font-semibold text-neutral-900">Content Pipeline</h1>
-          <p className="text-sm text-neutral-500">Idea → filmed → editing → scheduled → posted.</p>
+          <p className="text-sm text-neutral-500">Idea → filmed/editing → scheduled → posted.</p>
         </div>
         <button
           onClick={() => {
@@ -141,7 +140,7 @@ export default function ContentKanban() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {STAGES.map((stage) => {
           const stageItems = items.filter((i) => i.stage === stage.value);
           return (

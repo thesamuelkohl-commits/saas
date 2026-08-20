@@ -20,8 +20,7 @@ interface Stats {
 
 const STAT_LABEL: Record<string, string> = {
   idea: "Idea",
-  filmed: "Filmed",
-  editing: "Editing",
+  editing: "Filmed/Editing",
   scheduled: "Scheduled",
   posted: "Posted",
 };
