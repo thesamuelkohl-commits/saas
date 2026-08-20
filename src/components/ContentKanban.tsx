@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import FieldForm from "@/components/crud/FieldForm";
 import type { ColumnDef } from "@/components/crud/types";
+import { formatDateLocal } from "@/lib/date";
 
 const STAGES: { value: string; label: string; color: string }[] = [
   { value: "idea", label: "Idea", color: "border-t-neutral-400" },
@@ -188,11 +189,12 @@ export default function ContentKanban() {
                     )}
                     {item.film_date && (
                       <p className="mt-1 text-xs text-neutral-400">
-                        🎬{" "}
-                        {new Date(item.film_date).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                        })}
+                        🎬 {formatDateLocal(item.film_date, { month: "short", day: "numeric" })}
+                      </p>
+                    )}
+                    {item.posted_date && (
+                      <p className="mt-0.5 text-xs text-neutral-400">
+                        📤 {formatDateLocal(item.posted_date, { month: "short", day: "numeric" })}
                       </p>
                     )}
                     <button

@@ -1,4 +1,5 @@
 import type { ColumnDef } from "./types";
+import { formatDateLocal } from "@/lib/date";
 
 export function formatValue(
   value: unknown,
@@ -22,9 +23,9 @@ export function formatValue(
   }
 
   if (column.type === "date") {
-    const d = new Date(String(value));
-    if (Number.isNaN(d.getTime())) return String(value);
-    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    const str = String(value);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+    return formatDateLocal(str);
   }
 
   if (column.key.toLowerCase().includes("amount") || column.key.toLowerCase().includes("value")) {

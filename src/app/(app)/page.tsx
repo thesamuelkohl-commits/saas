@@ -76,6 +76,7 @@ export default function DashboardPage() {
       let revenueThisMonth = 0;
       const revenueByContent = new Map<string, { title: string; amount: number }>();
       const now = new Date();
+      const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
       for (const r of revenue ?? []) {
         const row = r as unknown as {
           source: string;
@@ -87,8 +88,7 @@ export default function DashboardPage() {
         revenueBySource[row.source] = (revenueBySource[row.source] ?? 0) + row.amount;
         revenueTotal += row.amount;
 
-        const d = new Date(row.entry_date);
-        if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()) {
+        if (row.entry_date.startsWith(currentYearMonth)) {
           revenueThisMonth += row.amount;
         }
 

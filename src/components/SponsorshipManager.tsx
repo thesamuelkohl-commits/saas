@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import FieldForm from "@/components/crud/FieldForm";
 import type { ColumnDef } from "@/components/crud/types";
+import { formatDateLocal, todayLocal } from "@/lib/date";
 
 const STAGE_OPTIONS = [
   { value: "prospect", label: "Prospect", color: "bg-neutral-100 text-neutral-600" },
@@ -75,7 +76,7 @@ export default function SponsorshipManager() {
   const [modal, setModal] = useState<"new" | string | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activityType, setActivityType] = useState("call");
-  const [activityDate, setActivityDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [activityDate, setActivityDate] = useState(() => todayLocal());
   const [activityNotes, setActivityNotes] = useState("");
   const [savingActivity, setSavingActivity] = useState(false);
 
@@ -108,7 +109,7 @@ export default function SponsorshipManager() {
   function openDetail(id: string) {
     setModal(id);
     setActivityType("call");
-    setActivityDate(new Date().toISOString().split("T")[0]);
+    setActivityDate(todayLocal());
     setActivityNotes("");
     loadActivities(id);
   }
@@ -276,7 +277,7 @@ export default function SponsorshipManager() {
                             {ACTIVITY_LABEL[a.type] ?? a.type}{" "}
                             <span className="font-normal text-neutral-400">
                               ·{" "}
-                              {new Date(a.occurred_at).toLocaleDateString(undefined, {
+                              {formatDateLocal(a.occurred_at, {
                                 month: "short",
                                 day: "numeric",
                                 year: "numeric",
