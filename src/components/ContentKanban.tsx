@@ -8,6 +8,7 @@ import { formatDateLocal } from "@/lib/date";
 
 const STAGES: { value: string; label: string; color: string }[] = [
   { value: "idea", label: "Idea", color: "border-t-neutral-400" },
+  { value: "film_scheduled", label: "Film Scheduled", color: "border-t-sky-400" },
   { value: "editing", label: "Filmed/Editing", color: "border-t-blue-400" },
   { value: "scheduled", label: "Scheduled", color: "border-t-purple-400" },
   { value: "posted", label: "Posted", color: "border-t-green-400" },
@@ -23,6 +24,7 @@ const columns: ColumnDef[] = [
     required: true,
     options: STAGES.map((s) => ({ value: s.value, label: s.label })),
   },
+  { key: "film_scheduled_date", label: "Film Scheduled Date", type: "date" },
   { key: "film_date", label: "Film Date", type: "date" },
   { key: "posted_date", label: "Posted Date", type: "date" },
   { key: "notes", label: "Notes", type: "textarea" },
@@ -34,6 +36,7 @@ interface ContentItem {
   title: string;
   inspo_link: string | null;
   stage: string;
+  film_scheduled_date: string | null;
   film_date: string | null;
   posted_date: string | null;
   notes: string | null;
@@ -108,7 +111,9 @@ export default function ContentKanban() {
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-lg font-semibold text-neutral-900">Content Pipeline</h1>
-          <p className="text-sm text-neutral-500">Idea → filmed/editing → scheduled → posted.</p>
+          <p className="text-sm text-neutral-500">
+            Idea → film scheduled → filmed/editing → scheduled → posted.
+          </p>
         </div>
         <button
           onClick={() => {
@@ -141,7 +146,7 @@ export default function ContentKanban() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {STAGES.map((stage) => {
           const stageItems = items.filter((i) => i.stage === stage.value);
           return (
@@ -187,8 +192,17 @@ export default function ContentKanban() {
                         🔗 Inspo link
                       </a>
                     )}
-                    {item.film_date && (
+                    {item.film_scheduled_date && (
                       <p className="mt-1 text-xs text-neutral-400">
+                        📅{" "}
+                        {formatDateLocal(item.film_scheduled_date, {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </p>
+                    )}
+                    {item.film_date && (
+                      <p className="mt-0.5 text-xs text-neutral-400">
                         🎬 {formatDateLocal(item.film_date, { month: "short", day: "numeric" })}
                       </p>
                     )}

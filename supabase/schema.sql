@@ -5,7 +5,7 @@
 create extension if not exists "pgcrypto";
 
 -- ---------- enums ----------
-create type content_stage as enum ('idea', 'editing', 'scheduled', 'posted');
+create type content_stage as enum ('idea', 'film_scheduled', 'editing', 'scheduled', 'posted');
 create type platform_name as enum ('tiktok', 'instagram', 'youtube');
 create type platform_status as enum ('not_started', 'scheduled', 'posted');
 create type sponsorship_stage as enum ('prospect', 'contacted', 'negotiating', 'deal_closed', 'worked_with', 'passed');
@@ -38,6 +38,7 @@ create table content_items (
   title text not null,
   stage content_stage not null default 'idea',
   notes text,
+  film_scheduled_date date,
   film_date date,
   posted_date date,
   created_at timestamptz not null default now(),

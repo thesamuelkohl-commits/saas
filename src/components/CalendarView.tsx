@@ -7,18 +7,20 @@ interface CalendarEvent {
   id: string;
   date: string; // YYYY-MM-DD
   label: string;
-  type: "film" | "scheduled" | "posted";
+  type: "film_scheduled" | "film" | "scheduled" | "posted";
   table: "content_items" | "platform_posts";
-  field: "film_date" | "posted_date" | "posted_at";
+  field: "film_scheduled_date" | "film_date" | "posted_date" | "posted_at";
 }
 
 const TYPE_STYLE: Record<CalendarEvent["type"], string> = {
+  film_scheduled: "bg-sky-100 text-sky-700",
   film: "bg-blue-100 text-blue-700",
   scheduled: "bg-purple-100 text-purple-700",
   posted: "bg-green-100 text-green-700",
 };
 
 const TYPE_LABEL: Record<CalendarEvent["type"], string> = {
+  film_scheduled: "Film Scheduled",
   film: "Film",
   scheduled: "Scheduled",
   posted: "Posted",
@@ -44,7 +46,9 @@ export default function CalendarView() {
   async function load() {
     const supabase = createClient();
     const [{ data: content }, { data: posts }] = await Promise.all([
-      supabase.from("content_items").select("id, title, film_date, posted_date"),
+      supabase
+        .from("content_items")
+        .select("id, title, film_scheduled_date, film_date, posted_date"),
       supabase.from("platform_posts").select("id, platform, posted_at, content_items(title)"),
     ]);
 
@@ -53,9 +57,20 @@ export default function CalendarView() {
     for (const c of (content ?? []) as {
       id: string;
       title: string;
+      film_scheduled_date: string | null;
       film_date: string | null;
       posted_date: string | null;
     }[]) {
+      if (c.film_scheduled_date) {
+        evts.push({
+          id: c.id,
+          date: c.film_scheduled_date,
+          label: c.title,
+          type: "film_scheduled",
+          table: "content_items",
+          field: "film_scheduled_date",
+        });
+      }
       if (c.film_date) {
         evts.push({
           id: c.id,
@@ -179,7 +194,9 @@ export default function CalendarView() {
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-neutral-900">Calendar</h1>
-          <p className="text-sm text-neutral-500">Film dates, scheduled posts, and posted content.</p>
+          <p className="text-sm text-neutral-500">
+            Film scheduled, film dates, scheduled posts, and posted content.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -210,6 +227,9 @@ export default function CalendarView() {
       </div>
 
       <div className="mb-2 flex flex-wrap items-center gap-4 text-xs text-neutral-500">
+        <span className="flex items-center gap-1">
+          <span className="h-2 w-2 rounded-full bg-sky-400" /> Film scheduled
+        </span>
         <span className="flex items-center gap-1">
           <span className="h-2 w-2 rounded-full bg-blue-400" /> Film date
         </span>
