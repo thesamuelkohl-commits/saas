@@ -10,7 +10,7 @@ const STAGES: { value: string; label: string; color: string }[] = [
   { value: "idea", label: "Idea", color: "border-t-neutral-400" },
   { value: "film_scheduled", label: "Film Scheduled", color: "border-t-sky-400" },
   { value: "editing", label: "Filmed/Editing", color: "border-t-blue-400" },
-  { value: "scheduled", label: "Scheduled", color: "border-t-purple-400" },
+  { value: "scheduled", label: "Ready to Post", color: "border-t-purple-400" },
   { value: "posted", label: "Posted", color: "border-t-green-400" },
 ];
 
@@ -101,6 +101,11 @@ export default function ContentKanban() {
     }
   }
 
+  function mostRecentDate(item: ContentItem): string {
+    const dates = [item.film_date, item.posted_date].filter((d): d is string => Boolean(d));
+    return dates.length ? dates.sort().pop()! : "";
+  }
+
   if (loading) return <p className="text-sm text-neutral-400">Loading…</p>;
 
   const editingItem = modal && modal !== "new" ? items.find((i) => i.id === modal) : null;
@@ -112,7 +117,7 @@ export default function ContentKanban() {
         <div>
           <h1 className="text-lg font-semibold text-neutral-900">Content Pipeline</h1>
           <p className="text-sm text-neutral-500">
-            Idea → film scheduled → filmed/editing → scheduled → posted.
+            Idea → film scheduled → filmed/editing → ready to post → posted.
           </p>
         </div>
         <button
@@ -148,7 +153,9 @@ export default function ContentKanban() {
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {STAGES.map((stage) => {
-          const stageItems = items.filter((i) => i.stage === stage.value);
+          const stageItems = items
+            .filter((i) => i.stage === stage.value)
+            .sort((a, b) => mostRecentDate(b).localeCompare(mostRecentDate(a)));
           return (
             <div
               key={stage.value}

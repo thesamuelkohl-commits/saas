@@ -22,7 +22,7 @@ const STAT_LABEL: Record<string, string> = {
   idea: "Idea",
   film_scheduled: "Film Scheduled",
   editing: "Filmed/Editing",
-  scheduled: "Scheduled",
+  scheduled: "Ready to Post",
   posted: "Posted",
 };
 
