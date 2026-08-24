@@ -106,6 +106,18 @@ export default function ContentKanban() {
     return dates.length ? dates.sort().pop()! : "";
   }
 
+  function sortStageItems(stage: string, list: ContentItem[]): ContentItem[] {
+    if (stage === "film_scheduled") {
+      // soonest upcoming film date first, undated items last
+      return list.sort((a, b) => {
+        if (!a.film_scheduled_date) return 1;
+        if (!b.film_scheduled_date) return -1;
+        return a.film_scheduled_date.localeCompare(b.film_scheduled_date);
+      });
+    }
+    return list.sort((a, b) => mostRecentDate(b).localeCompare(mostRecentDate(a)));
+  }
+
   if (loading) return <p className="text-sm text-neutral-400">Loading…</p>;
 
   const editingItem = modal && modal !== "new" ? items.find((i) => i.id === modal) : null;
@@ -153,9 +165,10 @@ export default function ContentKanban() {
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {STAGES.map((stage) => {
-          const stageItems = items
-            .filter((i) => i.stage === stage.value)
-            .sort((a, b) => mostRecentDate(b).localeCompare(mostRecentDate(a)));
+          const stageItems = sortStageItems(
+            stage.value,
+            items.filter((i) => i.stage === stage.value)
+          );
           return (
             <div
               key={stage.value}
