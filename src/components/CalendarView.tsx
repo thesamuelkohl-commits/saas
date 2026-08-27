@@ -61,7 +61,7 @@ export default function CalendarView() {
       film_date: string | null;
       posted_date: string | null;
     }[]) {
-      if (c.film_scheduled_date) {
+      if (c.film_scheduled_date && !c.film_date) {
         evts.push({
           id: c.id,
           date: c.film_scheduled_date,
