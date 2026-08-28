@@ -9,6 +9,7 @@ create type content_stage as enum ('idea', 'film_scheduled', 'editing', 'schedul
 create type platform_name as enum ('tiktok', 'instagram', 'youtube');
 create type platform_status as enum ('not_started', 'scheduled', 'posted');
 create type sponsorship_stage as enum ('prospect', 'contacted', 'negotiating', 'deal_closed', 'worked_with', 'passed');
+create type contact_type as enum ('creator', 'brand');
 create type revenue_source as enum ('sponsorship', 'affiliate', 'ads', 'platform', 'other');
 create type activity_type as enum ('call', 'text', 'email', 'meeting', 'other');
 
@@ -72,10 +73,11 @@ create table seo_entries (
   created_at timestamptz not null default now()
 );
 
--- ---------- sponsorship CRM ----------
+-- ---------- CRM ----------
 create table sponsorships (
   id uuid primary key default gen_random_uuid(),
   brand_name text not null,
+  contact_type contact_type,
   contact_name text,
   contact_email text,
   phone text,

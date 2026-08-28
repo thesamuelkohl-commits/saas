@@ -15,8 +15,20 @@ const STAGE_OPTIONS = [
   { value: "passed", label: "Passed", color: "bg-red-100 text-red-700" },
 ];
 
+const CONTACT_TYPE_OPTIONS = [
+  { value: "creator", label: "Creator", color: "bg-pink-100 text-pink-700" },
+  { value: "brand", label: "Brand", color: "bg-indigo-100 text-indigo-700" },
+];
+
 const columns: ColumnDef[] = [
-  { key: "brand_name", label: "Brand", type: "text", required: true },
+  { key: "brand_name", label: "Name", type: "text", required: true },
+  {
+    key: "contact_type",
+    label: "Type",
+    type: "select",
+    required: true,
+    options: CONTACT_TYPE_OPTIONS,
+  },
   { key: "stage", label: "Stage", type: "select", required: true, options: STAGE_OPTIONS },
   { key: "deal_value", label: "Deal Value", type: "number", step: "0.01" },
   { key: "contact_name", label: "Contact Name", type: "text" },
@@ -45,6 +57,7 @@ interface Sponsorship {
   [key: string]: unknown;
   id: string;
   brand_name: string;
+  contact_type: string | null;
   stage: string;
   deal_value: number | null;
   contact_name: string | null;
@@ -68,12 +81,21 @@ function badgeClasses(stage: string) {
 function stageLabel(stage: string) {
   return STAGE_OPTIONS.find((s) => s.value === stage)?.label ?? stage;
 }
+function typeClasses(type: string) {
+  return (
+    CONTACT_TYPE_OPTIONS.find((t) => t.value === type)?.color ?? "bg-neutral-100 text-neutral-600"
+  );
+}
+function typeLabel(type: string) {
+  return CONTACT_TYPE_OPTIONS.find((t) => t.value === type)?.label ?? type;
+}
 
 export default function SponsorshipManager() {
   const supabase = createClient();
   const [rows, setRows] = useState<Sponsorship[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<"new" | string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<string>("all");
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activityType, setActivityType] = useState("call");
   const [activityDate, setActivityDate] = useState(() => todayLocal());
@@ -172,15 +194,44 @@ export default function SponsorshipManager() {
     <div>
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-lg font-semibold text-neutral-900">Sponsorship CRM</h1>
+          <h1 className="text-lg font-semibold text-neutral-900">CRM</h1>
           <p className="text-sm text-neutral-500">Places to contact, contacted, and worked with.</p>
         </div>
         <button
           onClick={() => setModal("new")}
           className="shrink-0 rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white"
         >
-          + Brand
+          + Contact
         </button>
+      </div>
+
+      <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+        <button
+          onClick={() => setTypeFilter("all")}
+          className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium ${
+            typeFilter === "all"
+              ? "bg-neutral-900 text-white"
+              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+          }`}
+        >
+          All ({rows.length})
+        </button>
+        {CONTACT_TYPE_OPTIONS.map((t) => {
+          const count = rows.filter((r) => r.contact_type === t.value).length;
+          return (
+            <button
+              key={t.value}
+              onClick={() => setTypeFilter(t.value)}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium ${
+                typeFilter === t.value
+                  ? "bg-neutral-900 text-white"
+                  : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+              }`}
+            >
+              {t.label} ({count})
+            </button>
+          );
+        })}
       </div>
 
       {modal === "new" && (
@@ -302,35 +353,58 @@ export default function SponsorshipManager() {
         </div>
       )}
 
-      {rows.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-400">
-          Nothing here yet.
-        </p>
-      ) : (
-        <div className="space-y-2">
-          {rows.map((r) => (
-            <div
-              key={r.id}
-              onClick={() => openDetail(r.id)}
-              className="flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-neutral-200 bg-white p-3 hover:border-neutral-300"
-            >
-              <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
-                <span className="font-medium text-neutral-900">{r.brand_name}</span>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badgeClasses(r.stage)}`}>
-                  {stageLabel(r.stage)}
-                </span>
-                {r.deal_value !== null && (
-                  <span className="text-sm text-neutral-600">
-                    ${Number(r.deal_value).toLocaleString()}
+      {(() => {
+        const visibleRows =
+          typeFilter === "all" ? rows : rows.filter((r) => r.contact_type === typeFilter);
+        if (rows.length === 0) {
+          return (
+            <p className="rounded-lg border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-400">
+              Nothing here yet.
+            </p>
+          );
+        }
+        if (visibleRows.length === 0) {
+          return (
+            <p className="rounded-lg border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-400">
+              No matches for this filter.
+            </p>
+          );
+        }
+        return (
+          <div className="space-y-2">
+            {visibleRows.map((r) => (
+              <div
+                key={r.id}
+                onClick={() => openDetail(r.id)}
+                className="flex cursor-pointer items-center justify-between gap-4 rounded-lg border border-neutral-200 bg-white p-3 hover:border-neutral-300"
+              >
+                <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
+                  <span className="font-medium text-neutral-900">{r.brand_name}</span>
+                  {r.contact_type && (
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${typeClasses(r.contact_type)}`}
+                    >
+                      {typeLabel(r.contact_type)}
+                    </span>
+                  )}
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${badgeClasses(r.stage)}`}
+                  >
+                    {stageLabel(r.stage)}
                   </span>
-                )}
-                {r.phone && <span className="text-sm text-neutral-500">{r.phone}</span>}
+                  {r.deal_value !== null && (
+                    <span className="text-sm text-neutral-600">
+                      ${Number(r.deal_value).toLocaleString()}
+                    </span>
+                  )}
+                  {r.phone && <span className="text-sm text-neutral-500">{r.phone}</span>}
+                </div>
+                <span className="shrink-0 text-xs font-medium text-neutral-400">View →</span>
               </div>
-              <span className="shrink-0 text-xs font-medium text-neutral-400">View →</span>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        );
+      })()}
     </div>
   );
 }
