@@ -44,7 +44,7 @@ export default function DashboardPage() {
         { data: seoEntries },
       ] = await Promise.all([
         supabase.from("content_items").select("id, title, stage"),
-        supabase.from("sponsorships").select("stage, deal_value"),
+        supabase.from("sponsorships").select("stage, deal_value, contact_type"),
         supabase.from("revenue_entries").select("source, amount, entry_date, content_item_id, content_items(title)"),
         supabase
           .from("platform_posts")
@@ -64,8 +64,8 @@ export default function DashboardPage() {
       let sponsorshipPipelineValue = 0;
       let sponsorshipActiveCount = 0;
       for (const s of sponsorships ?? []) {
-        const row = s as { stage: string; deal_value: number | null };
-        if (activeStages.has(row.stage)) {
+        const row = s as { stage: string; deal_value: number | null; contact_type: string | null };
+        if (row.contact_type === "brand" && activeStages.has(row.stage)) {
           sponsorshipActiveCount += 1;
           sponsorshipPipelineValue += row.deal_value ?? 0;
         }
