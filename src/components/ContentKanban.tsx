@@ -50,6 +50,7 @@ export default function ContentKanban() {
   const [newStage, setNewStage] = useState("idea");
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
+  const [filter, setFilter] = useState<string>("all");
 
   async function load() {
     const { data } = await supabase
@@ -143,6 +144,35 @@ export default function ContentKanban() {
         </button>
       </div>
 
+      <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+        <button
+          onClick={() => setFilter("all")}
+          className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium ${
+            filter === "all"
+              ? "bg-neutral-900 text-white"
+              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+          }`}
+        >
+          All ({items.length})
+        </button>
+        {STAGES.map((stage) => {
+          const count = items.filter((i) => i.stage === stage.value).length;
+          return (
+            <button
+              key={stage.value}
+              onClick={() => setFilter(stage.value)}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium ${
+                filter === stage.value
+                  ? "bg-neutral-900 text-white"
+                  : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+              }`}
+            >
+              {stage.label} ({count})
+            </button>
+          );
+        })}
+      </div>
+
       {formOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
@@ -163,8 +193,14 @@ export default function ContentKanban() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {STAGES.map((stage) => {
+      <div
+        className={
+          filter === "all"
+            ? "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5"
+            : "grid grid-cols-1 gap-3"
+        }
+      >
+        {STAGES.filter((s) => filter === "all" || s.value === filter).map((stage) => {
           const stageItems = sortStageItems(
             stage.value,
             items.filter((i) => i.stage === stage.value)
