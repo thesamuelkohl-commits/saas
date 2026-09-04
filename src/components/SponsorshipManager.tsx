@@ -34,6 +34,8 @@ const columns: ColumnDef[] = [
   { key: "contact_name", label: "Contact Name", type: "text" },
   { key: "contact_email", label: "Contact Email", type: "text" },
   { key: "phone", label: "Phone", type: "text" },
+  { key: "instagram_url", label: "Instagram", type: "text", placeholder: "https://instagram.com/…" },
+  { key: "tiktok_url", label: "TikTok", type: "text", placeholder: "https://tiktok.com/@…" },
   { key: "last_contact_date", label: "Last Contact", type: "date" },
   { key: "notes", label: "Notes", type: "textarea" },
 ];
@@ -63,6 +65,8 @@ interface Sponsorship {
   contact_name: string | null;
   contact_email: string | null;
   phone: string | null;
+  instagram_url: string | null;
+  tiktok_url: string | null;
   last_contact_date: string | null;
   notes: string | null;
 }
@@ -398,6 +402,28 @@ export default function SponsorshipManager() {
                     </span>
                   )}
                   {r.phone && <span className="text-sm text-neutral-500">{r.phone}</span>}
+                  {r.instagram_url && (
+                    <a
+                      href={r.instagram_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-sm text-pink-600 hover:underline"
+                    >
+                      IG
+                    </a>
+                  )}
+                  {r.tiktok_url && (
+                    <a
+                      href={r.tiktok_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-sm text-neutral-900 hover:underline"
+                    >
+                      TikTok
+                    </a>
+                  )}
                 </div>
                 <span className="shrink-0 text-xs font-medium text-neutral-400">View →</span>
               </div>

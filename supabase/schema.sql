@@ -81,6 +81,8 @@ create table sponsorships (
   contact_name text,
   contact_email text,
   phone text,
+  instagram_url text,
+  tiktok_url text,
   stage sponsorship_stage not null default 'prospect',
   deal_value numeric(10,2),
   notes text,
