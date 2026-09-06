@@ -51,6 +51,7 @@ export default function ContentKanban() {
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
 
   async function load() {
     const { data } = await supabase
@@ -124,6 +125,10 @@ export default function ContentKanban() {
   const editingItem = modal && modal !== "new" ? items.find((i) => i.id === modal) : null;
   const formOpen = modal === "new" || Boolean(editingItem);
 
+  const searchedItems = search.trim()
+    ? items.filter((i) => i.title.toLowerCase().includes(search.trim().toLowerCase()))
+    : items;
+
   return (
     <div>
       <div className="mb-4 flex items-start justify-between gap-4">
@@ -144,6 +149,14 @@ export default function ContentKanban() {
         </button>
       </div>
 
+      <input
+        type="text"
+        placeholder="Search by title…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="mb-3 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
+      />
+
       <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
         <button
           onClick={() => setFilter("all")}
@@ -153,10 +166,10 @@ export default function ContentKanban() {
               : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
           }`}
         >
-          All ({items.length})
+          All ({searchedItems.length})
         </button>
         {STAGES.map((stage) => {
-          const count = items.filter((i) => i.stage === stage.value).length;
+          const count = searchedItems.filter((i) => i.stage === stage.value).length;
           return (
             <button
               key={stage.value}
@@ -203,7 +216,7 @@ export default function ContentKanban() {
         {STAGES.filter((s) => filter === "all" || s.value === filter).map((stage) => {
           const stageItems = sortStageItems(
             stage.value,
-            items.filter((i) => i.stage === stage.value)
+            searchedItems.filter((i) => i.stage === stage.value)
           );
           return (
             <div

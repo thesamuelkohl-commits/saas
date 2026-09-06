@@ -100,6 +100,7 @@ export default function SponsorshipManager() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<"new" | string | null>(null);
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activityType, setActivityType] = useState("call");
   const [activityDate, setActivityDate] = useState(() => todayLocal());
@@ -122,6 +123,17 @@ export default function SponsorshipManager() {
 
   const editing = modal && modal !== "new" ? rows.find((r) => r.id === modal) : null;
   const formOpen = modal === "new" || Boolean(editing);
+
+  const searchedRows = search.trim()
+    ? rows.filter((r) => {
+        const q = search.trim().toLowerCase();
+        return (
+          r.brand_name.toLowerCase().includes(q) ||
+          (r.contact_name ?? "").toLowerCase().includes(q) ||
+          (r.contact_email ?? "").toLowerCase().includes(q)
+        );
+      })
+    : rows;
 
   async function loadActivities(sponsorshipId: string) {
     const { data } = await supabase
@@ -209,6 +221,14 @@ export default function SponsorshipManager() {
         </button>
       </div>
 
+      <input
+        type="text"
+        placeholder="Search by name, contact, or email…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="mb-3 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
+      />
+
       <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
         <button
           onClick={() => setTypeFilter("all")}
@@ -218,10 +238,10 @@ export default function SponsorshipManager() {
               : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
           }`}
         >
-          All ({rows.length})
+          All ({searchedRows.length})
         </button>
         {CONTACT_TYPE_OPTIONS.map((t) => {
-          const count = rows.filter((r) => r.contact_type === t.value).length;
+          const count = searchedRows.filter((r) => r.contact_type === t.value).length;
           return (
             <button
               key={t.value}
@@ -359,7 +379,9 @@ export default function SponsorshipManager() {
 
       {(() => {
         const visibleRows =
-          typeFilter === "all" ? rows : rows.filter((r) => r.contact_type === typeFilter);
+          typeFilter === "all"
+            ? searchedRows
+            : searchedRows.filter((r) => r.contact_type === typeFilter);
         if (rows.length === 0) {
           return (
             <p className="rounded-lg border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-400">

@@ -9,9 +9,7 @@ const NAV = [
   { href: "/", label: "Dashboard", emoji: "📊" },
   { href: "/content", label: "Content Pipeline", emoji: "🎥" },
   { href: "/calendar", label: "Calendar", emoji: "📅" },
-  { href: "/platforms", label: "Platform Tracker", emoji: "📱" },
   { href: "/wishlist", label: "Wish List", emoji: "📝" },
-  { href: "/seo", label: "SEO Tracker", emoji: "🔎" },
   { href: "/sponsorships", label: "CRM", emoji: "🤝" },
   { href: "/revenue", label: "Revenue", emoji: "💰" },
 ];
