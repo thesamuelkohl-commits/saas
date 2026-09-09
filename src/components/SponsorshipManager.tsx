@@ -34,6 +34,7 @@ const columns: ColumnDef[] = [
   { key: "contact_name", label: "Contact Name", type: "text" },
   { key: "contact_email", label: "Contact Email", type: "text" },
   { key: "phone", label: "Phone", type: "text" },
+  { key: "website", label: "Website", type: "text", placeholder: "https://…" },
   { key: "instagram_url", label: "Instagram", type: "text", placeholder: "https://instagram.com/…" },
   { key: "tiktok_url", label: "TikTok", type: "text", placeholder: "https://tiktok.com/@…" },
   { key: "last_contact_date", label: "Last Contact", type: "date" },
@@ -65,6 +66,7 @@ interface Sponsorship {
   contact_name: string | null;
   contact_email: string | null;
   phone: string | null;
+  website: string | null;
   instagram_url: string | null;
   tiktok_url: string | null;
   last_contact_date: string | null;
@@ -424,6 +426,17 @@ export default function SponsorshipManager() {
                     </span>
                   )}
                   {r.phone && <span className="text-sm text-neutral-500">{r.phone}</span>}
+                  {r.website && (
+                    <a
+                      href={r.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      Website
+                    </a>
+                  )}
                   {r.instagram_url && (
                     <a
                       href={r.instagram_url}
