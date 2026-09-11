@@ -38,6 +38,7 @@ export default function FieldForm({
         cleaned[k] = v === "" ? null : v;
       }
       await onSave(cleaned);
+      setSaving(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setSaving(false);
