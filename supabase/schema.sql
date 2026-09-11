@@ -8,7 +8,7 @@ create extension if not exists "pgcrypto";
 create type content_stage as enum ('idea', 'film_scheduled', 'editing', 'scheduled', 'posted');
 create type platform_name as enum ('tiktok', 'instagram', 'youtube');
 create type platform_status as enum ('not_started', 'scheduled', 'posted');
-create type sponsorship_stage as enum ('prospect', 'contacted', 'negotiating', 'deal_closed', 'worked_with', 'passed');
+create type company_stage as enum ('prospect', 'contacted', 'negotiating', 'deal_closed', 'worked_with', 'passed');
 create type contact_type as enum ('creator', 'brand');
 create type revenue_source as enum ('sponsorship', 'affiliate', 'ads', 'platform', 'other');
 create type activity_type as enum ('call', 'text', 'email', 'meeting', 'other');
@@ -73,19 +73,17 @@ create table seo_entries (
   created_at timestamptz not null default now()
 );
 
--- ---------- CRM ----------
-create table sponsorships (
+-- ---------- CRM: companies + contacts (one company, many contacts) ----------
+create table companies (
   id uuid primary key default gen_random_uuid(),
   brand_name text not null,
   contact_type contact_type,
   category text,
-  contact_name text,
-  contact_email text,
-  phone text,
+  location text,
   website text,
   instagram_url text,
   tiktok_url text,
-  stage sponsorship_stage not null default 'prospect',
+  stage company_stage not null default 'prospect',
   deal_value numeric(10,2),
   notes text,
   last_contact_date date,
@@ -93,10 +91,20 @@ create table sponsorships (
   updated_at timestamptz not null default now()
 );
 
--- ---------- sponsorship activity log ----------
-create table sponsorship_activities (
+create table contacts (
   id uuid primary key default gen_random_uuid(),
-  sponsorship_id uuid not null references sponsorships(id) on delete cascade,
+  company_id uuid not null references companies(id) on delete cascade,
+  name text,
+  email text,
+  phone text,
+  role text,
+  created_at timestamptz not null default now()
+);
+
+-- ---------- company activity log ----------
+create table company_activities (
+  id uuid primary key default gen_random_uuid(),
+  company_id uuid not null references companies(id) on delete cascade,
   type activity_type not null,
   notes text,
   occurred_at date not null default current_date,
@@ -107,7 +115,7 @@ create table sponsorship_activities (
 create table revenue_entries (
   id uuid primary key default gen_random_uuid(),
   source revenue_source not null,
-  sponsorship_id uuid references sponsorships(id) on delete set null,
+  sponsorship_id uuid references companies(id) on delete set null,
   content_item_id uuid references content_items(id) on delete set null,
   amount numeric(10,2) not null,
   entry_date date not null default current_date,
@@ -126,7 +134,7 @@ $$;
 
 create trigger content_items_updated_at before update on content_items
   for each row execute function set_updated_at();
-create trigger sponsorships_updated_at before update on sponsorships
+create trigger companies_updated_at before update on companies
   for each row execute function set_updated_at();
 
 -- ---------- RLS: single-user app, any authenticated session gets full access ----------
@@ -134,8 +142,9 @@ alter table wishlist_items enable row level security;
 alter table content_items enable row level security;
 alter table platform_posts enable row level security;
 alter table seo_entries enable row level security;
-alter table sponsorships enable row level security;
-alter table sponsorship_activities enable row level security;
+alter table companies enable row level security;
+alter table contacts enable row level security;
+alter table company_activities enable row level security;
 alter table revenue_entries enable row level security;
 
 do $$
@@ -145,7 +154,7 @@ begin
   for t in
     select unnest(array[
       'wishlist_items', 'content_items', 'platform_posts',
-      'seo_entries', 'sponsorships', 'sponsorship_activities', 'revenue_entries'
+      'seo_entries', 'companies', 'contacts', 'company_activities', 'revenue_entries'
     ])
   loop
     execute format(

@@ -44,7 +44,7 @@ export default function DashboardPage() {
         { data: seoEntries },
       ] = await Promise.all([
         supabase.from("content_items").select("id, title, stage"),
-        supabase.from("sponsorships").select("stage, deal_value, contact_type"),
+        supabase.from("companies").select("stage, deal_value, contact_type"),
         supabase.from("revenue_entries").select("source, amount, entry_date, content_item_id, content_items(title)"),
         supabase
           .from("platform_posts")

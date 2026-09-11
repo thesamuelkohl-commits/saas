@@ -22,9 +22,9 @@ const columns: ColumnDef[] = [
   { key: "entry_date", label: "Date", type: "date", required: true, summary: true },
   {
     key: "sponsorship_id",
-    label: "Sponsorship",
+    label: "Company",
     type: "relation",
-    relation: { table: "sponsorships", labelField: "brand_name" },
+    relation: { table: "companies", labelField: "brand_name" },
   },
   {
     key: "content_item_id",

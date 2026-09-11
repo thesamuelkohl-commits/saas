@@ -20,7 +20,7 @@ const CONTACT_TYPE_OPTIONS = [
   { value: "brand", label: "Brand", color: "bg-indigo-100 text-indigo-700" },
 ];
 
-const columns: ColumnDef[] = [
+const companyColumns: ColumnDef[] = [
   { key: "brand_name", label: "Name", type: "text", required: true },
   {
     key: "contact_type",
@@ -35,16 +35,21 @@ const columns: ColumnDef[] = [
     type: "text",
     placeholder: "e.g. Restaurant, Hotel, Event, Product",
   },
+  { key: "location", label: "Location", type: "text" },
   { key: "stage", label: "Stage", type: "select", required: true, options: STAGE_OPTIONS },
   { key: "deal_value", label: "Deal Value", type: "number", step: "0.01" },
-  { key: "contact_name", label: "Contact Name", type: "text" },
-  { key: "contact_email", label: "Contact Email", type: "text" },
-  { key: "phone", label: "Phone", type: "text" },
   { key: "website", label: "Website", type: "text", placeholder: "https://…" },
   { key: "instagram_url", label: "Instagram", type: "text", placeholder: "https://instagram.com/…" },
   { key: "tiktok_url", label: "TikTok", type: "text", placeholder: "https://tiktok.com/@…" },
   { key: "last_contact_date", label: "Last Contact", type: "date" },
   { key: "notes", label: "Notes", type: "textarea" },
+];
+
+const contactColumns: ColumnDef[] = [
+  { key: "name", label: "Name", type: "text" },
+  { key: "role", label: "Role", type: "text", placeholder: "e.g. Marketing Manager" },
+  { key: "email", label: "Email", type: "text" },
+  { key: "phone", label: "Phone", type: "text" },
 ];
 
 const ACTIVITY_TYPES = [
@@ -62,17 +67,15 @@ const ACTIVITY_LABEL: Record<string, string> = Object.fromEntries(
   ACTIVITY_TYPES.map((t) => [t.value, t.label])
 );
 
-interface Sponsorship {
+interface Company {
   [key: string]: unknown;
   id: string;
   brand_name: string;
   contact_type: string | null;
   category: string | null;
+  location: string | null;
   stage: string;
   deal_value: number | null;
-  contact_name: string | null;
-  contact_email: string | null;
-  phone: string | null;
   website: string | null;
   instagram_url: string | null;
   tiktok_url: string | null;
@@ -80,9 +83,19 @@ interface Sponsorship {
   notes: string | null;
 }
 
+interface Contact {
+  [key: string]: unknown;
+  id: string;
+  company_id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  role: string | null;
+}
+
 interface Activity {
   id: string;
-  sponsorship_id: string;
+  company_id: string;
   type: string;
   notes: string | null;
   occurred_at: string;
@@ -105,13 +118,17 @@ function typeLabel(type: string) {
 
 export default function SponsorshipManager() {
   const supabase = createClient();
-  const [rows, setRows] = useState<Sponsorship[]>([]);
+  const [rows, setRows] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<"new" | string | null>(null);
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [stageFilter, setStageFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contactModal, setContactModal] = useState<"new" | string | null>(null);
+
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activityType, setActivityType] = useState("call");
   const [activityDate, setActivityDate] = useState(() => todayLocal());
@@ -120,10 +137,10 @@ export default function SponsorshipManager() {
 
   async function load() {
     const { data } = await supabase
-      .from("sponsorships")
+      .from("companies")
       .select("*")
       .order("created_at", { ascending: false });
-    setRows((data as Sponsorship[]) ?? []);
+    setRows((data as Company[]) ?? []);
     setLoading(false);
   }
 
@@ -134,15 +151,13 @@ export default function SponsorshipManager() {
 
   const editing = modal && modal !== "new" ? rows.find((r) => r.id === modal) : null;
   const formOpen = modal === "new" || Boolean(editing);
+  const editingContact =
+    contactModal && contactModal !== "new" ? contacts.find((c) => c.id === contactModal) : null;
 
   const searchedRows = search.trim()
     ? rows.filter((r) => {
         const q = search.trim().toLowerCase();
-        return (
-          r.brand_name.toLowerCase().includes(q) ||
-          (r.contact_name ?? "").toLowerCase().includes(q) ||
-          (r.contact_email ?? "").toLowerCase().includes(q)
-        );
+        return r.brand_name.toLowerCase().includes(q) || (r.location ?? "").toLowerCase().includes(q);
       })
     : rows;
 
@@ -150,39 +165,51 @@ export default function SponsorshipManager() {
     new Set(rows.map((r) => r.category).filter((c): c is string => Boolean(c)))
   ).sort();
 
-  async function loadActivities(sponsorshipId: string) {
+  async function loadContacts(companyId: string) {
     const { data } = await supabase
-      .from("sponsorship_activities")
+      .from("contacts")
       .select("*")
-      .eq("sponsorship_id", sponsorshipId)
+      .eq("company_id", companyId)
+      .order("created_at", { ascending: true });
+    setContacts((data as Contact[]) ?? []);
+  }
+
+  async function loadActivities(companyId: string) {
+    const { data } = await supabase
+      .from("company_activities")
+      .select("*")
+      .eq("company_id", companyId)
       .order("occurred_at", { ascending: false });
     setActivities((data as Activity[]) ?? []);
   }
 
   function openDetail(id: string) {
     setModal(id);
+    setContactModal(null);
     setActivityType("call");
     setActivityDate(todayLocal());
     setActivityNotes("");
+    loadContacts(id);
     loadActivities(id);
   }
 
   async function handleCreate(values: Record<string, unknown>) {
-    const { error } = await supabase.from("sponsorships").insert(values);
+    const { error } = await supabase.from("companies").insert(values);
     if (error) throw new Error(error.message);
     setModal(null);
     await load();
   }
 
   async function handleUpdate(id: string, values: Record<string, unknown>) {
-    const { error } = await supabase.from("sponsorships").update(values).eq("id", id);
+    const { error } = await supabase.from("companies").update(values).eq("id", id);
     if (error) throw new Error(error.message);
     await load();
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Delete this contact? This also deletes its activity history.")) return;
-    const { error } = await supabase.from("sponsorships").delete().eq("id", id);
+    if (!confirm("Delete this company? This also deletes its contacts and activity history."))
+      return;
+    const { error } = await supabase.from("companies").delete().eq("id", id);
     if (error) {
       alert(error.message);
       return;
@@ -191,11 +218,38 @@ export default function SponsorshipManager() {
     await load();
   }
 
+  async function handleCreateContact(values: Record<string, unknown>) {
+    if (!editing) return;
+    const { error } = await supabase.from("contacts").insert({ ...values, company_id: editing.id });
+    if (error) throw new Error(error.message);
+    setContactModal(null);
+    await loadContacts(editing.id);
+  }
+
+  async function handleUpdateContact(id: string, values: Record<string, unknown>) {
+    if (!editing) return;
+    const { error } = await supabase.from("contacts").update(values).eq("id", id);
+    if (error) throw new Error(error.message);
+    setContactModal(null);
+    await loadContacts(editing.id);
+  }
+
+  async function handleDeleteContact(id: string) {
+    if (!editing) return;
+    if (!confirm("Delete this contact?")) return;
+    const { error } = await supabase.from("contacts").delete().eq("id", id);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    await loadContacts(editing.id);
+  }
+
   async function handleLogActivity() {
     if (!editing) return;
     setSavingActivity(true);
-    const { error } = await supabase.from("sponsorship_activities").insert({
-      sponsorship_id: editing.id,
+    const { error } = await supabase.from("company_activities").insert({
+      company_id: editing.id,
       type: activityType,
       occurred_at: activityDate,
       notes: activityNotes || null,
@@ -211,7 +265,7 @@ export default function SponsorshipManager() {
 
   async function handleDeleteActivity(id: string) {
     if (!editing) return;
-    const { error } = await supabase.from("sponsorship_activities").delete().eq("id", id);
+    const { error } = await supabase.from("company_activities").delete().eq("id", id);
     if (error) {
       alert(error.message);
       return;
@@ -232,13 +286,13 @@ export default function SponsorshipManager() {
           onClick={() => setModal("new")}
           className="shrink-0 rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white"
         >
-          + Contact
+          + Company
         </button>
       </div>
 
       <input
         type="text"
-        placeholder="Search by name, contact, or email…"
+        placeholder="Search by name or location…"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         className="mb-3 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
@@ -334,7 +388,7 @@ export default function SponsorshipManager() {
         >
           <div className="w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
             <FieldForm
-              columns={columns}
+              columns={companyColumns}
               relationOptions={{}}
               onCancel={() => setModal(null)}
               onSave={handleCreate}
@@ -354,7 +408,7 @@ export default function SponsorshipManager() {
           >
             <div className="border-b border-neutral-100 p-4">
               <FieldForm
-                columns={columns}
+                columns={companyColumns}
                 initialValues={editing}
                 relationOptions={{}}
                 onCancel={() => setModal(null)}
@@ -364,8 +418,79 @@ export default function SponsorshipManager() {
                 onClick={() => handleDelete(editing.id)}
                 className="mt-2 text-xs font-medium text-red-600 hover:underline"
               >
-                Delete contact
+                Delete company
               </button>
+            </div>
+
+            <div className="border-b border-neutral-100 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-neutral-900">Contacts</h3>
+                <button
+                  onClick={() => setContactModal(contactModal === "new" ? null : "new")}
+                  className="rounded-md bg-neutral-900 px-2.5 py-1 text-xs font-medium text-white"
+                >
+                  {contactModal === "new" ? "Close" : "+ Contact"}
+                </button>
+              </div>
+
+              {contactModal === "new" && (
+                <div className="mb-3">
+                  <FieldForm
+                    columns={contactColumns}
+                    relationOptions={{}}
+                    onCancel={() => setContactModal(null)}
+                    onSave={handleCreateContact}
+                  />
+                </div>
+              )}
+
+              {contacts.length === 0 && contactModal !== "new" ? (
+                <p className="text-sm text-neutral-400">No contacts added yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {contacts.map((c) =>
+                    contactModal === c.id ? (
+                      <FieldForm
+                        key={c.id}
+                        columns={contactColumns}
+                        initialValues={c}
+                        relationOptions={{}}
+                        onCancel={() => setContactModal(null)}
+                        onSave={(v) => handleUpdateContact(c.id, v)}
+                      />
+                    ) : (
+                      <div
+                        key={c.id}
+                        className="flex items-center justify-between gap-2 rounded-md border border-neutral-200 bg-white p-2.5"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-neutral-900">
+                            {c.name || "Unnamed contact"}
+                            {c.role && <span className="font-normal text-neutral-400"> · {c.role}</span>}
+                          </p>
+                          <p className="truncate text-xs text-neutral-500">
+                            {[c.email, c.phone].filter(Boolean).join(" · ") || "—"}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-2">
+                          <button
+                            onClick={() => setContactModal(c.id)}
+                            className="text-xs font-medium text-neutral-600 hover:underline"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteContact(c.id)}
+                            className="text-xs font-medium text-red-500 hover:underline"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="p-4">
@@ -494,6 +619,7 @@ export default function SponsorshipManager() {
                       {r.category}
                     </span>
                   )}
+                  {r.location && <span className="text-sm text-neutral-500">{r.location}</span>}
                   {r.last_contact_date && (
                     <span className="text-sm text-neutral-500">
                       Last contact: {formatDateLocal(r.last_contact_date, { month: "short", day: "numeric" })}
@@ -504,7 +630,6 @@ export default function SponsorshipManager() {
                       ${Number(r.deal_value).toLocaleString()}
                     </span>
                   )}
-                  {r.phone && <span className="text-sm text-neutral-500">{r.phone}</span>}
                   {r.website && (
                     <a
                       href={r.website}
