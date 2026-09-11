@@ -78,6 +78,7 @@ create table sponsorships (
   id uuid primary key default gen_random_uuid(),
   brand_name text not null,
   contact_type contact_type,
+  category text,
   contact_name text,
   contact_email text,
   phone text,

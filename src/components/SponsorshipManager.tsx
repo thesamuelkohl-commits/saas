@@ -29,6 +29,12 @@ const columns: ColumnDef[] = [
     required: true,
     options: CONTACT_TYPE_OPTIONS,
   },
+  {
+    key: "category",
+    label: "Category",
+    type: "text",
+    placeholder: "e.g. Restaurant, Hotel, Event, Product",
+  },
   { key: "stage", label: "Stage", type: "select", required: true, options: STAGE_OPTIONS },
   { key: "deal_value", label: "Deal Value", type: "number", step: "0.01" },
   { key: "contact_name", label: "Contact Name", type: "text" },
@@ -61,6 +67,7 @@ interface Sponsorship {
   id: string;
   brand_name: string;
   contact_type: string | null;
+  category: string | null;
   stage: string;
   deal_value: number | null;
   contact_name: string | null;
@@ -102,6 +109,8 @@ export default function SponsorshipManager() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<"new" | string | null>(null);
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [stageFilter, setStageFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activityType, setActivityType] = useState("call");
@@ -136,6 +145,10 @@ export default function SponsorshipManager() {
         );
       })
     : rows;
+
+  const categories = Array.from(
+    new Set(rows.map((r) => r.category).filter((c): c is string => Boolean(c)))
+  ).sort();
 
   async function loadActivities(sponsorshipId: string) {
     const { data } = await supabase
@@ -260,6 +273,60 @@ export default function SponsorshipManager() {
         })}
       </div>
 
+      <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+        <button
+          onClick={() => setStageFilter("all")}
+          className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium ${
+            stageFilter === "all"
+              ? "bg-neutral-900 text-white"
+              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+          }`}
+        >
+          All Stages
+        </button>
+        {STAGE_OPTIONS.map((s) => {
+          const count = searchedRows.filter((r) => r.stage === s.value).length;
+          return (
+            <button
+              key={s.value}
+              onClick={() => setStageFilter(s.value)}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium ${
+                stageFilter === s.value
+                  ? "bg-neutral-900 text-white"
+                  : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+              }`}
+            >
+              {s.label} ({count})
+            </button>
+          );
+        })}
+      </div>
+
+      {categories.length > 0 && (
+        <div className="mb-4 flex items-center gap-2">
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-sm text-neutral-700 outline-none focus:border-neutral-900"
+          >
+            <option value="all">All Categories</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          {categoryFilter !== "all" && (
+            <button
+              onClick={() => setCategoryFilter("all")}
+              className="text-sm font-medium text-neutral-500 hover:underline"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      )}
+
       {modal === "new" && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
@@ -380,10 +447,12 @@ export default function SponsorshipManager() {
       )}
 
       {(() => {
-        const visibleRows =
-          typeFilter === "all"
-            ? searchedRows
-            : searchedRows.filter((r) => r.contact_type === typeFilter);
+        const visibleRows = searchedRows.filter(
+          (r) =>
+            (typeFilter === "all" || r.contact_type === typeFilter) &&
+            (stageFilter === "all" || r.stage === stageFilter) &&
+            (categoryFilter === "all" || r.category === categoryFilter)
+        );
         if (rows.length === 0) {
           return (
             <p className="rounded-lg border border-dashed border-neutral-300 p-6 text-center text-sm text-neutral-400">
@@ -420,6 +489,16 @@ export default function SponsorshipManager() {
                   >
                     {stageLabel(r.stage)}
                   </span>
+                  {r.category && (
+                    <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600">
+                      {r.category}
+                    </span>
+                  )}
+                  {r.last_contact_date && (
+                    <span className="text-sm text-neutral-500">
+                      Last contact: {formatDateLocal(r.last_contact_date, { month: "short", day: "numeric" })}
+                    </span>
+                  )}
                   {r.deal_value !== null && (
                     <span className="text-sm text-neutral-600">
                       ${Number(r.deal_value).toLocaleString()}
