@@ -86,6 +86,7 @@ interface Company {
   tiktok_url: string | null;
   last_contact_date: string | null;
   notes: string | null;
+  created_at: string;
 }
 
 interface Contact {
@@ -124,6 +125,7 @@ function typeLabel(type: string) {
 export default function SponsorshipManager() {
   const supabase = createClient();
   const [rows, setRows] = useState<Company[]>([]);
+  const [lastActivityByCompany, setLastActivityByCompany] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<"new" | string | null>(null);
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -141,11 +143,29 @@ export default function SponsorshipManager() {
   const [savingActivity, setSavingActivity] = useState(false);
 
   async function load() {
-    const { data } = await supabase
-      .from("companies")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setRows((data as Company[]) ?? []);
+    const [{ data }, { data: allActivities }] = await Promise.all([
+      supabase.from("companies").select("*"),
+      supabase.from("company_activities").select("company_id, occurred_at"),
+    ]);
+
+    const lastActivity: Record<string, string> = {};
+    for (const a of (allActivities ?? []) as { company_id: string; occurred_at: string }[]) {
+      if (!lastActivity[a.company_id] || a.occurred_at > lastActivity[a.company_id]) {
+        lastActivity[a.company_id] = a.occurred_at;
+      }
+    }
+    setLastActivityByCompany(lastActivity);
+
+    const companies = (data as Company[]) ?? [];
+    companies.sort((a, b) => {
+      const aActivity = lastActivity[a.id];
+      const bActivity = lastActivity[b.id];
+      if (aActivity && !bActivity) return -1;
+      if (!aActivity && bActivity) return 1;
+      if (aActivity && bActivity) return bActivity.localeCompare(aActivity);
+      return b.created_at.localeCompare(a.created_at);
+    });
+    setRows(companies);
     setLoading(false);
   }
 
@@ -266,6 +286,7 @@ export default function SponsorshipManager() {
     }
     setActivityNotes("");
     await loadActivities(editing.id);
+    await load();
   }
 
   async function handleDeleteActivity(id: string) {
@@ -276,6 +297,7 @@ export default function SponsorshipManager() {
       return;
     }
     await loadActivities(editing.id);
+    await load();
   }
 
   if (loading) return <p className="text-sm text-neutral-400">Loading…</p>;
@@ -619,6 +641,17 @@ export default function SponsorshipManager() {
                   >
                     {stageLabel(r.stage)}
                   </span>
+                  {lastActivityByCompany[r.id] ? (
+                    <span className="text-sm text-neutral-500">
+                      Last activity:{" "}
+                      {formatDateLocal(lastActivityByCompany[r.id], {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-neutral-300">No activity yet</span>
+                  )}
                   {r.category && (
                     <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600">
                       {r.category}
