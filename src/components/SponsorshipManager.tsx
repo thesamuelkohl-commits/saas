@@ -57,6 +57,7 @@ const contactColumns: ColumnDef[] = [
 const ACTIVITY_TYPES = [
   { value: "call", label: "Call", emoji: "📞" },
   { value: "text", label: "Text", emoji: "💬" },
+  { value: "ig_dm", label: "IG DM", emoji: "📷" },
   { value: "email", label: "Email", emoji: "✉️" },
   { value: "meeting", label: "Meeting", emoji: "🤝" },
   { value: "other", label: "Other", emoji: "📌" },

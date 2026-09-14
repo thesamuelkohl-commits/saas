@@ -11,7 +11,7 @@ create type platform_status as enum ('not_started', 'scheduled', 'posted');
 create type company_stage as enum ('prospect', 'contacted', 'negotiating', 'deal_closed', 'worked_with', 'passed');
 create type contact_type as enum ('creator', 'brand');
 create type revenue_source as enum ('sponsorship', 'affiliate', 'ads', 'platform', 'other');
-create type activity_type as enum ('call', 'text', 'email', 'meeting', 'other');
+create type activity_type as enum ('call', 'text', 'ig_dm', 'email', 'meeting', 'other');
 
 -- ---------- wish list ----------
 create table wishlist_items (
