@@ -80,6 +80,8 @@ create table companies (
   contact_type contact_type,
   category text,
   location text,
+  email text,
+  phone text,
   website text,
   instagram_url text,
   tiktok_url text,

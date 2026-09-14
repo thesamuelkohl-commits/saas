@@ -38,6 +38,8 @@ const companyColumns: ColumnDef[] = [
   { key: "location", label: "Location", type: "text" },
   { key: "stage", label: "Stage", type: "select", required: true, options: STAGE_OPTIONS },
   { key: "deal_value", label: "Deal Value", type: "number", step: "0.01" },
+  { key: "email", label: "Email", type: "text", placeholder: "info@…" },
+  { key: "phone", label: "Phone", type: "text" },
   { key: "website", label: "Website", type: "text", placeholder: "https://…" },
   { key: "instagram_url", label: "Instagram", type: "text", placeholder: "https://instagram.com/…" },
   { key: "tiktok_url", label: "TikTok", type: "text", placeholder: "https://tiktok.com/@…" },
@@ -76,6 +78,8 @@ interface Company {
   location: string | null;
   stage: string;
   deal_value: number | null;
+  email: string | null;
+  phone: string | null;
   website: string | null;
   instagram_url: string | null;
   tiktok_url: string | null;
@@ -629,6 +633,24 @@ export default function SponsorshipManager() {
                     <span className="text-sm text-neutral-600">
                       ${Number(r.deal_value).toLocaleString()}
                     </span>
+                  )}
+                  {r.email && (
+                    <a
+                      href={`mailto:${r.email}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      {r.email}
+                    </a>
+                  )}
+                  {r.phone && (
+                    <a
+                      href={`tel:${r.phone}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-sm text-neutral-500 hover:underline"
+                    >
+                      {r.phone}
+                    </a>
                   )}
                   {r.website && (
                     <a
