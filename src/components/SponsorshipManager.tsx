@@ -107,21 +107,6 @@ interface Activity {
   occurred_at: string;
 }
 
-function badgeClasses(stage: string) {
-  return STAGE_OPTIONS.find((s) => s.value === stage)?.color ?? "bg-neutral-100 text-neutral-600";
-}
-function stageLabel(stage: string) {
-  return STAGE_OPTIONS.find((s) => s.value === stage)?.label ?? stage;
-}
-function typeClasses(type: string) {
-  return (
-    CONTACT_TYPE_OPTIONS.find((t) => t.value === type)?.color ?? "bg-neutral-100 text-neutral-600"
-  );
-}
-function typeLabel(type: string) {
-  return CONTACT_TYPE_OPTIONS.find((t) => t.value === type)?.label ?? type;
-}
-
 export default function SponsorshipManager() {
   const supabase = createClient();
   const [rows, setRows] = useState<Company[]>([]);
@@ -629,18 +614,6 @@ export default function SponsorshipManager() {
               >
                 <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1">
                   <span className="font-medium text-neutral-900">{r.brand_name}</span>
-                  {r.contact_type && (
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${typeClasses(r.contact_type)}`}
-                    >
-                      {typeLabel(r.contact_type)}
-                    </span>
-                  )}
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${badgeClasses(r.stage)}`}
-                  >
-                    {stageLabel(r.stage)}
-                  </span>
                   {lastActivityByCompany[r.id] ? (
                     <span className="text-sm text-neutral-500">
                       Last activity:{" "}
@@ -651,73 +624,6 @@ export default function SponsorshipManager() {
                     </span>
                   ) : (
                     <span className="text-sm text-neutral-300">No activity yet</span>
-                  )}
-                  {r.category && (
-                    <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600">
-                      {r.category}
-                    </span>
-                  )}
-                  {r.location && <span className="text-sm text-neutral-500">{r.location}</span>}
-                  {r.last_contact_date && (
-                    <span className="text-sm text-neutral-500">
-                      Last contact: {formatDateLocal(r.last_contact_date, { month: "short", day: "numeric" })}
-                    </span>
-                  )}
-                  {r.deal_value !== null && (
-                    <span className="text-sm text-neutral-600">
-                      ${Number(r.deal_value).toLocaleString()}
-                    </span>
-                  )}
-                  {r.email && (
-                    <a
-                      href={`mailto:${r.email}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-sm text-blue-600 hover:underline"
-                    >
-                      {r.email}
-                    </a>
-                  )}
-                  {r.phone && (
-                    <a
-                      href={`tel:${r.phone}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-sm text-neutral-500 hover:underline"
-                    >
-                      {r.phone}
-                    </a>
-                  )}
-                  {r.website && (
-                    <a
-                      href={r.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-sm text-blue-600 hover:underline"
-                    >
-                      Website
-                    </a>
-                  )}
-                  {r.instagram_url && (
-                    <a
-                      href={r.instagram_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-sm text-pink-600 hover:underline"
-                    >
-                      IG
-                    </a>
-                  )}
-                  {r.tiktok_url && (
-                    <a
-                      href={r.tiktok_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-sm text-neutral-900 hover:underline"
-                    >
-                      TikTok
-                    </a>
                   )}
                 </div>
                 <span className="shrink-0 text-xs font-medium text-neutral-400">View →</span>
