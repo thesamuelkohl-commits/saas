@@ -29,14 +29,13 @@ const BILLING_TYPE_OPTIONS = [
   { value: "monthly", label: "Monthly" },
 ];
 
+const CATEGORY_OPTIONS = ["Restaurant", "Product", "Hotel", "Event", "Venue", "Shop"].map(
+  (c) => ({ value: c, label: c })
+);
+
 const companyColumns: ColumnDef[] = [
   { key: "brand_name", label: "Company", type: "text", required: true },
-  {
-    key: "category",
-    label: "Category",
-    type: "text",
-    placeholder: "e.g. Restaurant, Hotel, Event, Product",
-  },
+  { key: "category", label: "Category", type: "select", options: CATEGORY_OPTIONS },
   { key: "location", label: "Location", type: "text" },
   { key: "email", label: "Email", type: "text", placeholder: "info@…" },
   { key: "phone", label: "Phone", type: "text" },
