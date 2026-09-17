@@ -60,7 +60,14 @@ export default function DashboardPage() {
       }
 
       // ---- sponsorships ----
-      const activeStages = new Set(["prospect", "contacted", "negotiating", "deal_closed"]);
+      const activeStages = new Set([
+        "prospect",
+        "contacted",
+        "responded",
+        "portfolio_sent",
+        "call_discussion",
+        "proposal_sent",
+      ]);
       let sponsorshipPipelineValue = 0;
       let sponsorshipActiveCount = 0;
       for (const s of sponsorships ?? []) {

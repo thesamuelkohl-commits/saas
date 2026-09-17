@@ -8,7 +8,11 @@ create extension if not exists "pgcrypto";
 create type content_stage as enum ('idea', 'film_scheduled', 'editing', 'scheduled', 'posted');
 create type platform_name as enum ('tiktok', 'instagram', 'youtube');
 create type platform_status as enum ('not_started', 'scheduled', 'posted');
-create type company_stage as enum ('prospect', 'contacted', 'negotiating', 'deal_closed', 'worked_with', 'passed');
+create type company_stage as enum (
+  'prospect', 'contacted', 'responded', 'portfolio_sent', 'call_discussion',
+  'proposal_sent', 'won', 'monthly_client', 'lost_not_now'
+);
+create type billing_type as enum ('one_time', 'monthly');
 create type contact_type as enum ('creator', 'brand');
 create type revenue_source as enum ('sponsorship', 'affiliate', 'ads', 'platform', 'other');
 create type activity_type as enum ('call', 'text', 'ig_dm', 'email', 'meeting', 'other');
@@ -85,8 +89,17 @@ create table companies (
   website text,
   instagram_url text,
   tiktok_url text,
+  lead_source text,
+  priority smallint, -- 1 high, 2 medium, 3 low
+  ugc_idea text,
   stage company_stage not null default 'prospect',
-  deal_value numeric(10,2),
+  first_contact_date date,
+  follow_up_1_date date,
+  follow_up_2_date date,
+  package_discussed text,
+  deal_value numeric(10,2), -- shown as "Quoted $"
+  billing_type billing_type,
+  closed_amount numeric(10,2),
   notes text,
   last_contact_date date,
   created_at timestamptz not null default now(),

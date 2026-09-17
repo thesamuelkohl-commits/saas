@@ -9,10 +9,24 @@ import { formatDateLocal, todayLocal } from "@/lib/date";
 const STAGE_OPTIONS = [
   { value: "prospect", label: "Prospect", color: "bg-neutral-100 text-neutral-600" },
   { value: "contacted", label: "Contacted", color: "bg-blue-100 text-blue-700" },
-  { value: "negotiating", label: "Negotiating", color: "bg-amber-100 text-amber-700" },
-  { value: "deal_closed", label: "Deal Closed", color: "bg-purple-100 text-purple-700" },
-  { value: "worked_with", label: "Worked With", color: "bg-green-100 text-green-700" },
-  { value: "passed", label: "Passed", color: "bg-red-100 text-red-700" },
+  { value: "responded", label: "Responded", color: "bg-sky-100 text-sky-700" },
+  { value: "portfolio_sent", label: "Portfolio Sent", color: "bg-cyan-100 text-cyan-700" },
+  { value: "call_discussion", label: "Call/Discussion", color: "bg-amber-100 text-amber-700" },
+  { value: "proposal_sent", label: "Proposal Sent", color: "bg-purple-100 text-purple-700" },
+  { value: "won", label: "Won", color: "bg-green-100 text-green-700" },
+  { value: "monthly_client", label: "Monthly Client", color: "bg-emerald-100 text-emerald-700" },
+  { value: "lost_not_now", label: "Lost/Not Now", color: "bg-red-100 text-red-700" },
+];
+
+const PRIORITY_OPTIONS = [
+  { value: "1", label: "High" },
+  { value: "2", label: "Medium" },
+  { value: "3", label: "Low" },
+];
+
+const BILLING_TYPE_OPTIONS = [
+  { value: "one_time", label: "One-Time" },
+  { value: "monthly", label: "Monthly" },
 ];
 
 const CONTACT_TYPE_OPTIONS = [
@@ -21,7 +35,7 @@ const CONTACT_TYPE_OPTIONS = [
 ];
 
 const companyColumns: ColumnDef[] = [
-  { key: "brand_name", label: "Name", type: "text", required: true },
+  { key: "brand_name", label: "Company", type: "text", required: true },
   {
     key: "contact_type",
     label: "Type",
@@ -36,14 +50,23 @@ const companyColumns: ColumnDef[] = [
     placeholder: "e.g. Restaurant, Hotel, Event, Product",
   },
   { key: "location", label: "Location", type: "text" },
-  { key: "stage", label: "Stage", type: "select", required: true, options: STAGE_OPTIONS },
-  { key: "deal_value", label: "Deal Value", type: "number", step: "0.01" },
   { key: "email", label: "Email", type: "text", placeholder: "info@…" },
   { key: "phone", label: "Phone", type: "text" },
-  { key: "website", label: "Website", type: "text", placeholder: "https://…" },
   { key: "instagram_url", label: "Instagram", type: "text", placeholder: "https://instagram.com/…" },
+  { key: "website", label: "Website", type: "text", placeholder: "https://…" },
   { key: "tiktok_url", label: "TikTok", type: "text", placeholder: "https://tiktok.com/@…" },
+  { key: "lead_source", label: "Lead Source", type: "text", placeholder: "e.g. Instagram, Referral, Walk-in" },
+  { key: "priority", label: "Priority", type: "select", options: PRIORITY_OPTIONS },
+  { key: "ugc_idea", label: "UGC Idea", type: "textarea" },
+  { key: "first_contact_date", label: "First Contact", type: "date" },
+  { key: "follow_up_1_date", label: "Follow-Up #1", type: "date" },
+  { key: "follow_up_2_date", label: "Follow-Up #2", type: "date" },
   { key: "last_contact_date", label: "Last Contact", type: "date" },
+  { key: "stage", label: "Status", type: "select", required: true, options: STAGE_OPTIONS },
+  { key: "package_discussed", label: "Package Discussed", type: "text" },
+  { key: "deal_value", label: "Quoted $", type: "number", step: "0.01" },
+  { key: "billing_type", label: "One-Time/Monthly", type: "select", options: BILLING_TYPE_OPTIONS },
+  { key: "closed_amount", label: "Closed $", type: "number", step: "0.01" },
   { key: "notes", label: "Notes", type: "textarea" },
 ];
 
@@ -77,8 +100,17 @@ interface Company {
   contact_type: string | null;
   category: string | null;
   location: string | null;
+  lead_source: string | null;
+  priority: number | null;
+  ugc_idea: string | null;
   stage: string;
+  first_contact_date: string | null;
+  follow_up_1_date: string | null;
+  follow_up_2_date: string | null;
+  package_discussed: string | null;
   deal_value: number | null;
+  billing_type: string | null;
+  closed_amount: number | null;
   email: string | null;
   phone: string | null;
   website: string | null;
@@ -348,7 +380,7 @@ export default function SponsorshipManager() {
               : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
           }`}
         >
-          All Stages
+          All Statuses
         </button>
         {STAGE_OPTIONS.map((s) => {
           const count = searchedRows.filter((r) => r.stage === s.value).length;
