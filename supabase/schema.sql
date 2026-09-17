@@ -13,7 +13,6 @@ create type company_stage as enum (
   'proposal_sent', 'won', 'monthly_client', 'lost_not_now'
 );
 create type billing_type as enum ('one_time', 'monthly');
-create type contact_type as enum ('creator', 'brand');
 create type revenue_source as enum ('sponsorship', 'affiliate', 'ads', 'platform', 'other');
 create type activity_type as enum ('call', 'text', 'ig_dm', 'email', 'meeting', 'other');
 
@@ -81,7 +80,6 @@ create table seo_entries (
 create table companies (
   id uuid primary key default gen_random_uuid(),
   brand_name text not null,
-  contact_type contact_type,
   category text,
   location text,
   email text,

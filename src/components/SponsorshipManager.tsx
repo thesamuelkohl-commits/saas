@@ -29,20 +29,8 @@ const BILLING_TYPE_OPTIONS = [
   { value: "monthly", label: "Monthly" },
 ];
 
-const CONTACT_TYPE_OPTIONS = [
-  { value: "creator", label: "Creator", color: "bg-pink-100 text-pink-700" },
-  { value: "brand", label: "Brand", color: "bg-indigo-100 text-indigo-700" },
-];
-
 const companyColumns: ColumnDef[] = [
   { key: "brand_name", label: "Company", type: "text", required: true },
-  {
-    key: "contact_type",
-    label: "Type",
-    type: "select",
-    required: true,
-    options: CONTACT_TYPE_OPTIONS,
-  },
   {
     key: "category",
     label: "Category",
@@ -97,7 +85,6 @@ interface Company {
   [key: string]: unknown;
   id: string;
   brand_name: string;
-  contact_type: string | null;
   category: string | null;
   location: string | null;
   lead_source: string | null;
@@ -145,7 +132,6 @@ export default function SponsorshipManager() {
   const [lastActivityByCompany, setLastActivityByCompany] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<"new" | string | null>(null);
-  const [typeFilter, setTypeFilter] = useState<string>("all");
   const [stageFilter, setStageFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
@@ -344,35 +330,6 @@ export default function SponsorshipManager() {
 
       <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
         <button
-          onClick={() => setTypeFilter("all")}
-          className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium ${
-            typeFilter === "all"
-              ? "bg-neutral-900 text-white"
-              : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
-          }`}
-        >
-          All ({searchedRows.length})
-        </button>
-        {CONTACT_TYPE_OPTIONS.map((t) => {
-          const count = searchedRows.filter((r) => r.contact_type === t.value).length;
-          return (
-            <button
-              key={t.value}
-              onClick={() => setTypeFilter(t.value)}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium ${
-                typeFilter === t.value
-                  ? "bg-neutral-900 text-white"
-                  : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
-              }`}
-            >
-              {t.label} ({count})
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
-        <button
           onClick={() => setStageFilter("all")}
           className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium ${
             stageFilter === "all"
@@ -380,7 +337,7 @@ export default function SponsorshipManager() {
               : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
           }`}
         >
-          All Statuses
+          All ({searchedRows.length})
         </button>
         {STAGE_OPTIONS.map((s) => {
           const count = searchedRows.filter((r) => r.stage === s.value).length;
@@ -618,7 +575,6 @@ export default function SponsorshipManager() {
       {(() => {
         const visibleRows = searchedRows.filter(
           (r) =>
-            (typeFilter === "all" || r.contact_type === typeFilter) &&
             (stageFilter === "all" || r.stage === stageFilter) &&
             (categoryFilter === "all" || r.category === categoryFilter)
         );
