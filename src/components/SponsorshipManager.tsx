@@ -29,7 +29,7 @@ const BILLING_TYPE_OPTIONS = [
   { value: "monthly", label: "Monthly" },
 ];
 
-const CATEGORY_OPTIONS = ["Restaurant", "Product", "Hotel", "Event", "Venue", "Shop"].map(
+const CATEGORY_OPTIONS = ["Restaurant/Bar/Coffee", "Product", "Hotel", "Event", "Venue", "Shop"].map(
   (c) => ({ value: c, label: c })
 );
 
