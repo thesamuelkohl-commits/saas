@@ -64,9 +64,7 @@ export default function DashboardPage() {
         "prospect",
         "contacted",
         "responded",
-        "portfolio_sent",
         "call_discussion",
-        "proposal_sent",
       ]);
       let sponsorshipPipelineValue = 0;
       let sponsorshipActiveCount = 0;

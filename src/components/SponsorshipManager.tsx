@@ -10,9 +10,8 @@ const STAGE_OPTIONS = [
   { value: "prospect", label: "Prospect", color: "bg-neutral-100 text-neutral-600" },
   { value: "contacted", label: "Contacted", color: "bg-blue-100 text-blue-700" },
   { value: "responded", label: "Responded", color: "bg-sky-100 text-sky-700" },
-  { value: "portfolio_sent", label: "Portfolio Sent", color: "bg-cyan-100 text-cyan-700" },
-  { value: "call_discussion", label: "Call/Discussion", color: "bg-amber-100 text-amber-700" },
-  { value: "proposal_sent", label: "Proposal Sent", color: "bg-purple-100 text-purple-700" },
+  // Stored as call_discussion so existing rows need no migration; only the label changed.
+  { value: "call_discussion", label: "Negotiating", color: "bg-amber-100 text-amber-700" },
   { value: "won", label: "Won", color: "bg-green-100 text-green-700" },
   { value: "monthly_client", label: "Monthly Client", color: "bg-emerald-100 text-emerald-700" },
   { value: "lost_not_now", label: "Lost/Not Now", color: "bg-red-100 text-red-700" },
@@ -44,17 +43,10 @@ const companyColumns: ColumnDef[] = [
   { key: "tiktok_url", label: "TikTok", type: "text", placeholder: "https://tiktok.com/@…" },
   { key: "lead_source", label: "Lead Source", type: "text", placeholder: "e.g. Instagram, Referral, Walk-in" },
   { key: "priority", label: "Priority", type: "select", options: PRIORITY_OPTIONS },
-  { key: "ugc_idea", label: "UGC Idea", type: "textarea" },
-  { key: "first_contact_date", label: "First Contact", type: "date" },
-  { key: "follow_up_1_date", label: "Follow-Up #1", type: "date" },
-  { key: "follow_up_2_date", label: "Follow-Up #2", type: "date" },
-  { key: "last_contact_date", label: "Last Contact", type: "date" },
   { key: "stage", label: "Status", type: "select", required: true, options: STAGE_OPTIONS },
-  { key: "package_discussed", label: "Package Discussed", type: "text" },
   { key: "deal_value", label: "Quoted $", type: "number", step: "0.01" },
   { key: "billing_type", label: "One-Time/Monthly", type: "select", options: BILLING_TYPE_OPTIONS },
   { key: "closed_amount", label: "Closed $", type: "number", step: "0.01" },
-  { key: "notes", label: "Notes", type: "textarea" },
 ];
 
 const contactColumns: ColumnDef[] = [
@@ -70,6 +62,7 @@ const ACTIVITY_TYPES = [
   { value: "ig_dm", label: "IG DM", emoji: "📷" },
   { value: "email", label: "Email", emoji: "✉️" },
   { value: "meeting", label: "Meeting", emoji: "🤝" },
+  { value: "note", label: "Note", emoji: "📝" },
   { value: "other", label: "Other", emoji: "📌" },
 ];
 
@@ -88,12 +81,7 @@ interface Company {
   location: string | null;
   lead_source: string | null;
   priority: number | null;
-  ugc_idea: string | null;
   stage: string;
-  first_contact_date: string | null;
-  follow_up_1_date: string | null;
-  follow_up_2_date: string | null;
-  package_discussed: string | null;
   deal_value: number | null;
   billing_type: string | null;
   closed_amount: number | null;
@@ -102,8 +90,6 @@ interface Company {
   website: string | null;
   instagram_url: string | null;
   tiktok_url: string | null;
-  last_contact_date: string | null;
-  notes: string | null;
   created_at: string;
 }
 
@@ -147,11 +133,12 @@ export default function SponsorshipManager() {
   async function load() {
     const [{ data }, { data: allActivities }] = await Promise.all([
       supabase.from("companies").select("*"),
-      supabase.from("company_activities").select("company_id, occurred_at"),
+      supabase.from("company_activities").select("company_id, occurred_at, type"),
     ]);
 
     const lastActivity: Record<string, string> = {};
-    for (const a of (allActivities ?? []) as { company_id: string; occurred_at: string }[]) {
+    for (const a of (allActivities ?? []) as { company_id: string; occurred_at: string; type: string }[]) {
+      if (a.type === "note") continue;
       if (!lastActivity[a.company_id] || a.occurred_at > lastActivity[a.company_id]) {
         lastActivity[a.company_id] = a.occurred_at;
       }
@@ -407,6 +394,85 @@ export default function SponsorshipManager() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="border-b border-neutral-100 p-4">
+              <h2 className="mb-4 text-base font-semibold text-neutral-900">{editing.brand_name}</h2>
+              <h3 className="mb-3 text-sm font-semibold text-neutral-900">Activity History</h3>
+
+              <div className="mb-4 space-y-2 rounded-lg border border-neutral-200 bg-neutral-50 p-3">
+                <div className="flex flex-wrap gap-2">
+                <select
+                  value={activityType}
+                  onChange={(e) => setActivityType(e.target.value)}
+                  className="rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-sm"
+                >
+                  {ACTIVITY_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.emoji} {t.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="date"
+                  value={activityDate}
+                  onChange={(e) => setActivityDate(e.target.value)}
+                  className="rounded-md border border-neutral-300 px-2.5 py-1.5 text-sm"
+                />
+                <button
+                  onClick={handleLogActivity}
+                  // A note is only its text, so an empty one has nothing to save.
+                  disabled={savingActivity || (activityType === "note" && !activityNotes.trim())}
+                  className="ml-auto rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+                >
+                  {activityType === "note" ? "Add Note" : "Log"}
+                </button>
+                </div>
+                <textarea
+                  rows={activityType === "note" ? 4 : 2}
+                  placeholder={activityType === "note" ? "Write a note…" : "Notes (optional)"}
+                  value={activityNotes}
+                  onChange={(e) => setActivityNotes(e.target.value)}
+                  className="w-full rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-sm outline-none focus:border-neutral-900"
+                />
+              </div>
+
+              {activities.length === 0 ? (
+                <p className="text-sm text-neutral-400">No activity logged yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {activities.map((a) => (
+                    <div
+                      key={a.id}
+                      className="flex items-start justify-between gap-2 rounded-md border border-neutral-200 bg-white p-2.5"
+                    >
+                      <div className="flex min-w-0 items-start gap-2">
+                        <span>{ACTIVITY_EMOJI[a.type] ?? "📌"}</span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-neutral-900">
+                            {ACTIVITY_LABEL[a.type] ?? a.type}{" "}
+                            <span className="font-normal text-neutral-400">
+                              ·{" "}
+                              {formatDateLocal(a.occurred_at, {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
+                            </span>
+                          </p>
+                          {a.notes && <p className="whitespace-pre-wrap text-sm text-neutral-600">{a.notes}</p>}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteActivity(a.id)}
+                        className="shrink-0 text-xs font-medium text-red-500 hover:underline"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="border-b border-neutral-100 p-4">
               <FieldForm
                 columns={companyColumns}
                 initialValues={editing}
@@ -422,7 +488,7 @@ export default function SponsorshipManager() {
               </button>
             </div>
 
-            <div className="border-b border-neutral-100 p-4">
+            <div className="p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-neutral-900">Contacts</h3>
                 <button
@@ -489,81 +555,6 @@ export default function SponsorshipManager() {
                       </div>
                     )
                   )}
-                </div>
-              )}
-            </div>
-
-            <div className="p-4">
-              <h3 className="mb-3 text-sm font-semibold text-neutral-900">Activity History</h3>
-
-              <div className="mb-4 grid grid-cols-1 gap-2 rounded-lg border border-neutral-200 bg-neutral-50 p-3 sm:grid-cols-[auto_auto_1fr_auto]">
-                <select
-                  value={activityType}
-                  onChange={(e) => setActivityType(e.target.value)}
-                  className="rounded-md border border-neutral-300 bg-white px-2.5 py-1.5 text-sm"
-                >
-                  {ACTIVITY_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.emoji} {t.label}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="date"
-                  value={activityDate}
-                  onChange={(e) => setActivityDate(e.target.value)}
-                  className="rounded-md border border-neutral-300 px-2.5 py-1.5 text-sm"
-                />
-                <input
-                  type="text"
-                  placeholder="Notes (optional)"
-                  value={activityNotes}
-                  onChange={(e) => setActivityNotes(e.target.value)}
-                  className="rounded-md border border-neutral-300 px-2.5 py-1.5 text-sm"
-                />
-                <button
-                  onClick={handleLogActivity}
-                  disabled={savingActivity}
-                  className="rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
-                >
-                  Log
-                </button>
-              </div>
-
-              {activities.length === 0 ? (
-                <p className="text-sm text-neutral-400">No activity logged yet.</p>
-              ) : (
-                <div className="space-y-2">
-                  {activities.map((a) => (
-                    <div
-                      key={a.id}
-                      className="flex items-start justify-between gap-2 rounded-md border border-neutral-200 bg-white p-2.5"
-                    >
-                      <div className="flex min-w-0 items-start gap-2">
-                        <span>{ACTIVITY_EMOJI[a.type] ?? "📌"}</span>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-neutral-900">
-                            {ACTIVITY_LABEL[a.type] ?? a.type}{" "}
-                            <span className="font-normal text-neutral-400">
-                              ·{" "}
-                              {formatDateLocal(a.occurred_at, {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })}
-                            </span>
-                          </p>
-                          {a.notes && <p className="text-sm text-neutral-600">{a.notes}</p>}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteActivity(a.id)}
-                        className="shrink-0 text-xs font-medium text-red-500 hover:underline"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  ))}
                 </div>
               )}
             </div>

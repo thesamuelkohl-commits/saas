@@ -14,7 +14,7 @@ create type company_stage as enum (
 );
 create type billing_type as enum ('one_time', 'monthly');
 create type revenue_source as enum ('sponsorship', 'affiliate', 'ads', 'platform', 'other');
-create type activity_type as enum ('call', 'text', 'ig_dm', 'email', 'meeting', 'other');
+create type activity_type as enum ('call', 'text', 'ig_dm', 'email', 'meeting', 'note', 'other');
 
 -- ---------- wish list ----------
 create table wishlist_items (
