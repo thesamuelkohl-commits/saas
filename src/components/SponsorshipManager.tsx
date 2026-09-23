@@ -17,12 +17,6 @@ const STAGE_OPTIONS = [
   { value: "lost_not_now", label: "Lost/Not Now", color: "bg-red-100 text-red-700" },
 ];
 
-const PRIORITY_OPTIONS = [
-  { value: "1", label: "High" },
-  { value: "2", label: "Medium" },
-  { value: "3", label: "Low" },
-];
-
 const BILLING_TYPE_OPTIONS = [
   { value: "one_time", label: "One-Time" },
   { value: "monthly", label: "Monthly" },
@@ -42,7 +36,6 @@ const companyColumns: ColumnDef[] = [
   { key: "website", label: "Website", type: "text", placeholder: "https://…" },
   { key: "tiktok_url", label: "TikTok", type: "text", placeholder: "https://tiktok.com/@…" },
   { key: "lead_source", label: "Lead Source", type: "text", placeholder: "e.g. Instagram, Referral, Walk-in" },
-  { key: "priority", label: "Priority", type: "select", options: PRIORITY_OPTIONS },
   { key: "stage", label: "Status", type: "select", required: true, options: STAGE_OPTIONS },
   { key: "deal_value", label: "Quoted $", type: "number", step: "0.01" },
   { key: "billing_type", label: "One-Time/Monthly", type: "select", options: BILLING_TYPE_OPTIONS },
@@ -80,7 +73,6 @@ interface Company {
   category: string | null;
   location: string | null;
   lead_source: string | null;
-  priority: number | null;
   stage: string;
   deal_value: number | null;
   billing_type: string | null;

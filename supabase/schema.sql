@@ -88,7 +88,6 @@ create table companies (
   instagram_url text,
   tiktok_url text,
   lead_source text,
-  priority smallint, -- 1 high, 2 medium, 3 low
   ugc_idea text,
   stage company_stage not null default 'prospect',
   first_contact_date date,
